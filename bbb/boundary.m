@@ -279,6 +279,11 @@ c...  the last term going as 0.001 is to prevent very small densities
      .                niy1(ix,0,ifld)*(2*gyf(ix,0)*lynix(1,ix,ifld)-1)/
      .                                (2*gyf(ix,0)*lynix(1,ix,ifld)+1) -
      .                                  nwimin(ifld) ) / n0(ifld)
+               elseif (isnwconi(ifld) .eq. 4) then  #..zml the same as 3 but remove positive
+                    yldot(iv1) =-nurlxn*( niy0(ix,0,ifld) -
+     .                niy1(ix,0,ifld)*(2*gyf(ix,0)*lynix(1,ix,ifld)-1)/
+     .                                (2*gyf(ix,0)*lynix(1,ix,ifld)+1) -
+     .                                  nwimin(ifld) ) / n0(ifld)
                endif   # end if-test for core and p.f. boundaries
 
              endif           # endif for if (isupgon.eq.1 ...
@@ -445,6 +450,11 @@ c     the adjacent cells.
      .                          ni(ix,1,iimp)-1) ) ) + 0.2*ni(ix,1,iimp)
                      yldot(iv) = nurlxn *(nbound - ni(ix,0,iimp))/n0(iimp)
                   elseif (isnwconi(iimp) .eq. 3) then  #spec. gradient
+                     yldot(iv) = -nurlxn*( niy0(ix,0,iimp) -
+     .                 niy1(ix,0,iimp)*(2*gyf(ix,0)*lynix(1,ix,iimp)-1)/
+     .                                 (2*gyf(ix,0)*lynix(1,ix,iimp)+1) -
+     .                                     nwimin(iimp) ) / n0(iimp)
+                  elseif (isnwconi(iimp) .eq. 4) then  #..zml, remove positive flux
                      yldot(iv) = -nurlxn*( niy0(ix,0,iimp) -
      .                 niy1(ix,0,iimp)*(2*gyf(ix,0)*lynix(1,ix,iimp)-1)/
      .                                 (2*gyf(ix,0)*lynix(1,ix,iimp)+1) -
@@ -1199,6 +1209,11 @@ ccc                 nbound = max(nbound, 0.3*ni(ix,ny,ifld))
      .              niy0(ix,ny,ifld)*(2*gyf(ix,ny)*lynix(2,ix,ifld)-1)/
      .                               (2*gyf(ix,ny)*lynix(2,ix,ifld)+1) -
      .                         nwomin(ifld) ) / n0(ifld)
+              elseif (isnwcono(ifld) .eq. 4) then   #..zml fniy >= 0
+                  yldot(iv1) = -nurlxn*( niy1(ix,ny,ifld) -
+     .              niy0(ix,ny,ifld)*(2*gyf(ix,ny)*lynix(2,ix,ifld)-1)/
+     .                               (2*gyf(ix,ny)*lynix(2,ix,ifld)+1) -
+     .                         nwomin(ifld) ) / n0(ifld)
 
               endif            # endif for if (isnwcono.eq.1 .and. ..
             endif              # endif for neut. ni; i.e., if (isupgon .eq. 1
@@ -1274,6 +1289,11 @@ c     of the adjacent cells.
      .                         ni(ix,ny,iimp)-1) ) ) + 0.2*ni(ix,ny,iimp)
                   yldot(iv) = nurlxn*(nbound - ni(ix,ny+1,iimp))/n0(iimp)
                elseif (isnwcono(iimp) .eq. 3) then   #spec. gradient 
+                  yldot(iv) = -nurlxn*( niy1(ix,ny,iimp) -
+     .              niy0(ix,ny,iimp)*(2*gyf(ix,ny)*lynix(2,ix,iimp)-1)/
+     .                               (2*gyf(ix,ny)*lynix(2,ix,iimp)+1) -
+     .                         nwomin(iimp) ) / n0(iimp)
+               elseif (isnwcono(iimp) .eq. 4) then   #..zml fniy >= 0
                   yldot(iv) = -nurlxn*( niy1(ix,ny,iimp) -
      .              niy0(ix,ny,iimp)*(2*gyf(ix,ny)*lynix(2,ix,iimp)-1)/
      .                               (2*gyf(ix,ny)*lynix(2,ix,iimp)+1) -

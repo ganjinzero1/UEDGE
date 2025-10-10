@@ -3378,6 +3378,23 @@ c ... TODO: Add double-null fix here (now only does one half-mesh...)
             end if
           end if
       end do
+
+      #..zml: avoid negative radial fluxes on the wall boundary
+      do ifld = 1, nfsp
+        if (isnwcono(ifld) .eq. 4 .and. zi(ifld) .ne. 0.0) then
+          do ix = i4, i8
+            fniy(ix,ny,ifld) = max(fniy(ix,ny,ifld),0.0)
+          enddo
+        endif
+        #..PFR
+        if (isnwconi(ifld) .eq. 4 .and. zi(ifld) .ne. 0.0) then
+          do ix = i2, i5
+            if (isixcore(ix) .ne. 1) then
+              fniy(ix,0,ifld) = min(fniy(ix,0,ifld),0.0)
+            endif
+          enddo
+        endif
+      enddo
              
 
 
