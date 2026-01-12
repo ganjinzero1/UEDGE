@@ -184,6 +184,32 @@ c     next, for average Z**2:
       return
       end
 
+c----------------------------------------------------------------------c
+
+      subroutine savemulffparam (izspff)    #..zml
+      implicit none
+      integer izspff
+Use(P93dat)   # nt,nr,nn,tdatm,rdatm,ndatm,emdatm,z1datm,z2datm
+Use(Imslwrk)   # nxdata_api,nydata_api,nzdata,xdata_api,ydata_api,zdata,fdata_api,ldf_api,mdf,
+               # kxords_api,kyords_api,kzords,xknots_api,yknots_api,zknots,emcoef,
+               # z1coef,z2coef
+Use(Multi_fix_frc)   # atn_mul,atw_mul,emdatm_mul,z1datm_mul,z2datm_mul,
+                     # emcoef_mul,z1coef_mul,z2coef_mul
+      external gallot
+
+      if (izspff < 2) call gallot("Multi_fix_frc",0)
+      atn_mul(izspff) = atn
+      atw_mul(izspff) = atw
+      emdatm_mul(:,:,:,izspff) = emdatm(:,:,:)
+      z1datm_mul(:,:,:,izspff) = z1datm(:,:,:)
+      z2datm_mul(:,:,:,izspff) = z2datm(:,:,:)
+      emcoef_mul(:,:,:,izspff) = emcoef(:,:,:)
+      z1coef_mul(:,:,:,izspff) = z1coef(:,:,:)
+      z2coef_mul(:,:,:,izspff) = z2coef(:,:,:)
+
+      return
+      end
+
 c-----------------------------------------------------------------------
 
       real function emissbs (vte,vnr,vnt)
@@ -218,6 +244,47 @@ c     		vnt = ne*tau [sec/m**3].
      &             emcoef, ldf_api, mdf, icont, iworki, work2, iflagi)
       w=10**vlogw
       emissbs=w
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      real function emissbs_mul (vte,vnr,vnt,izspff)    #..zml
+      implicit none
+      real vnt,vnr,vte
+Use(Imslwrk)   # nxdata_api,nydata_api,nzdata,xdata_api,ydata_api,zdata,
+               # kxords_api,kyords_api,kzords,xknots_api,yknots_api,zknots
+Use(Multi_fix_frc) # emcoef_mul
+
+      integer nxcoef,nycoef,nzcoef,izspff
+      real vlogw,w,xuse,yuse,zuse
+
+      real B3VAL
+      external B3VAL
+
+c     Evaluate 3-dimensional B-spline representation for impurity
+c     emissivity [Watts-m**3] versus :
+c               vte = e-temperature [J]
+c               vnr = ng/ne density ratio
+c               vnt = ne*tau [sec/m**3].
+
+      xuse=min(max(xdata_api(1),log10(vte)),xdata_api(nxdata_api))
+      yuse=min(max(ydata_api(1),log10(vnr)),ydata_api(nydata_api))
+      zuse=min(max(zdata(1),log10(vnt)),zdata(nzdata))
+
+      nxcoef=nxdata_api
+      nycoef=nydata_api
+      nzcoef=nzdata
+
+      emcoef(:,:,:) = emcoef_mul(:,:,:,izspff)
+
+      icont = 0
+      vlogw=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots_api, yknots_api, zknots,
+     &             nxcoef, nycoef, nzcoef, kxords_api, kyords_api, kzords,
+     &             emcoef, ldf_api, mdf, icont, iworki, work2, iflagi)
+      w=10**vlogw
+      emissbs_mul=w
 
       return
       end

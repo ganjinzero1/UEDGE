@@ -14,6 +14,7 @@ MXMISO1=MXMISO+1
 KNX=3*KXA*KXA*MXNZCH
 KMXZ=KXA*MXMINZ
 NBA=5		# used in fmombal
+nzspffmx=3     #..zml maximum of fix-frac impurity species used for storage allocation
 }
 
 ***** Com_Dim_Vars hidden:    
@@ -140,6 +141,22 @@ emdatm(nt,nr,nn)	_real	[Watts-m**3]	# emissivity
 z1datm(nt,nr,nn)	_real			# average Z
 z2datm(nt,nr,nn)	_real			# average Z**2
 
+***** Multi_fix_frc:
+#..zml multiple fixed fraction impurity species with multiple mist.dat files
+atn_mul(nzspffmx)  integer    #..zml atomic number
+atw_mul(nzspffmx)  integer    #..zml atomic weight
+# assuming nt,nr,nn,tdatm,rdatm,ndatm are the same for all mist.dat files of all species.
+# the repository mist.dat files indeed have the same T,Ratio,ntau data points.
+#tdatm(nt,nr,nn,nzspffmx)         _real   [J]             # temperature
+#rdatm(nt,nr,nn,nzspffmx)         _real                   # density ratio
+#ndatm(nt,nr,nn,nzspffmx)         _real   [sec/m**3]      # n*tau
+emdatm_mul(nt,nr,nn,nzspffmx)        _real   [Watts-m**3]    #..zml emissivity
+z1datm_mul(nt,nr,nn,nzspffmx)        _real                   #..zml average Z
+z2datm_mul(nt,nr,nn,nzspffmx)        _real                   #..zml average Z**2
+emcoef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for emissivity
+z1coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for average-Z
+z2coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for average-Z**2
+
 ***** Imslwrk:
 # working arrays for 3-d spline interpolation
 nxdata_api	integer
@@ -178,11 +195,19 @@ readpost(fname:string)	subroutine
 	# read formatted data table for one impurity
 splinem		subroutine
 	# construct 3-d spline representation for impurity radiation and charge
+savemulffparam(izspff:integer)   subroutine
+        #..zml save data table and 3-d spline fitting for species izspff (multi fix-frac)
 emissbs(te:real,nratio:real,ntau:real)	real function
 	# radiated power per impurity atom per electron [Watts-m**3]
 	# te = e-temperature		[J]
 	# nratio = ng / ne		[none]
 	# ntau = ne * tau-impurity	[sec/m**3]
+emissbs_mul(te:real,nratio:real,ntau:real,izspff:integer)  real function   #..zml
+        # radiated power per impurity atom per electron [Watts-m**3]
+        # te = e-temperature            [J]
+        # nratio = ng / ne              [none]
+        # ntau = ne * tau-impurity      [sec/m**3]
+	# izspff: fixed-fraction impurity species
 z1avgbs(te:real,nratio:real,ntau:real)	real function
 	# average Z of impurity
 	# te = e-temperature		[J]

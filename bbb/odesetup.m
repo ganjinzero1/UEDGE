@@ -686,7 +686,7 @@ c-----------------------------------------------------------------------
                     # xnrmo,xvnrmo,xnrmox,xvnrmox,
                     # ynrmo,yvnrmo,ynrmox,yvnrmox,ixmg,iyomg,ixvmg,
                     # iyvomg,ix2g,iy2g,ixv2g,iyv2g,
-                    # nis,tes,tis,phis,ups,ngs,afracs,isimesh
+                    # nis,tes,tis,phis,ups,ngs,afracs,afracs_mul,isimesh
       Use(UEpar)    # ngbackg,,isnion,isupon,isteon,istion,isngon,isphion
                     # isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy
                     # svrpkg,isphiofft,methg
@@ -1033,9 +1033,12 @@ c ... Set up tables for impurity atomic-physics processes.
       if (isimpon .eq. 1) then		# obsolete option
          call xerrab ('ueinit -- option isimpon=1 is obsolete; use 2')
       elseif (isimpon .eq. 2) then	# data supplied by D. Post 1993
-         call readpost(coronalimpfname)
-         call splinem
-         call remark('*** For isimpon=2, set afracs, not afrac ***')
+         do igsp = 1, nzspff  #..zml multi species of fixed-fraction
+           call readpost(coronalimpfname(igsp))
+           call splinem
+  	   call savemulffparam(igsp)
+           call remark('*** For isimpon=2, set afracs, not afrac ***')
+         enddo
       elseif ((isimpon .eq. 3) .and. (nzspt .gt. 0)) then    # avg-ion
          impflag = 1
          crni = 1.
@@ -1053,9 +1056,12 @@ c ... Set up tables for impurity atomic-physics processes.
          endif
       elseif (isimpon .eq. 7) then      # read both Post and Braams tables
 c.....First the Post table(s):
-         call readpost(coronalimpfname)
-         call splinem
-         call remark('*** For isimpon=7, set afracs, not afrac ***')
+         do igsp = 1, nzspff  #..zml multi species of fixed-fraction
+           call readpost(coronalimpfname(igsp))
+           call splinem
+	   call savemulffparam(igsp)
+           call remark('*** For isimpon=7, set afracs, not afrac ***')
+	 enddo
 c.....Then the Braams table(s):
          if (ismctab .eq. 1) then        # use INEL multi-charge tables
             impflag = 2
@@ -1519,14 +1525,16 @@ c.... If the grid does not change, but restart from saved variables
                 ti(ix,iy)      = tis(ix,iy)
                 phi(ix,iy) = phis(ix,iy)
                 if (isimpon .eq. 2 .or. isimpon .eq. 7) then
-                  if (afracs(1,1)+afracs(nx,ny).gt.1.e-20) then
-                    afrac(ix,iy) = afracs(ix,iy)
-                  else
-                    afracs(ix,iy) = 1.e-20
-                    afrac(ix,iy) = afracs(ix,iy)
-                    call remark('***WARNING: 
-     .                          setting afracs = 1.e-20; 0 is illegal')
-                  endif
+	          do igsp = 1, nzspff   #..zml
+                    if (afracs_mul(1,1,igsp)+afracs_mul(nx,ny,igsp).gt.1.e-20) then
+                      afrac_mul(ix,iy,igsp) = afracs_mul(ix,iy,igsp)
+                    else
+                      afracs_mul(ix,iy,igsp) = 1.e-20
+                      afrac_mul(ix,iy,igsp) = afracs_mul(ix,iy,igsp)
+                      call remark('***WARNING: 
+     .                          setting afracs_mul = 1.e-20; 0 is illegal')
+                    endif
+		  enddo
                 endif
                 if (phis(nxold-1,nyold-1) .eq. 0) phi(ix,iy) = 40.  #avoid phi=0.
              enddo
@@ -1637,8 +1645,12 @@ c...  Now interpolate the plasma variables
          call intpvar (tis, ti, 0, nxold, nyold)
          call intpvar (phis, phi, 0, nxold, nyold)
 c...  Interpolate the relative fraction of impurities
-         if (isimpon>0 .and. afracs(1,1)+afracs(nxold,nyold)>1.e-20)
-     .                        call intpvar (afracs,afrac,0,nxold,nyold)
+#         if (isimpon>0 .and. afracs(1,1)+afracs(nxold,nyold)>1.e-20)
+#     .                        call intpvar (afracs,afrac,0,nxold,nyold)
+         do igsp = 1, nzspff
+	   if (isimpon>0 .and. afracs_mul(1,1,igsp)+afracs_mul(nxold,nyold,igsp)>1.e-20)
+     .                call intpvar (afracs_mul(0:,0:,igsp),afrac_mul(0:,0:,igsp),0,nxold,nyold)
+         enddo
 
 c...  If phis(nx-1,ny-1)=0., reset to constant 40 volts
          if (phis(nxold-1,nyold-1).eq.0.)

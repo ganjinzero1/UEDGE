@@ -657,7 +657,7 @@ cnxg      data igs/1/
       Use(Wkspace)
       Use(Gradients)
       Use(Imprad)   # isimpon,nzloc,impradloc,prad,pradz,na,ntau,nratio,
-                    # afrac,atau,ismctab,rcxighg,pwrze
+                    # afrac,afrac_mul,atau,ismctab,rcxighg,pwrze
 
       Use(Volsrc)   # pwrsore,pwrsori,volpsor
       Use(Model_choice)   # iondenseqn
@@ -682,10 +682,10 @@ cnxg      data igs/1/
 *  -- procedures for atomic and molecular rates --
       integer zmax,znuc
       real dene,denz(0:1),radz(0:1)
-      real rsa, rra, rqa, rcx, emissbs, erl1, erl2, radneq, radimpmc
+      real rsa, rra, rqa, rcx, emissbs, emissbs_mul, erl1, erl2, radneq, radimpmc
       real radmc, svdiss, vyiy0, vyiym1, v2ix0, v2ixm1
       real tgupyface, ngupyface, n1upyface, ng2upyface
-      external rsa, rra, rqa, rcx, emissbs, erl1, erl2, radneq, radimpmc
+      external rsa, rra, rqa, rcx, emissbs, emissbs_mul, erl1, erl2, radneq, radimpmc
       external radmc, svdiss
       real tick,tock
       external tick,tock
@@ -4690,10 +4690,16 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                nratio(ix,iy) = ng(ix,iy,1)/ne(ix,iy)
                pradold = pwrzec(ix,iy)
                if (isimpon .eq. 2) then   # fixed-fraction model
-                  na(ix,iy) = afrac(ix,iy) * ne(ix,iy)
-                  pradcff(ix,iy) = na(ix,iy) * ne(ix,iy) *
-     .               emissbs (te(ix,iy), nratio(ix,iy), ntau(ix,iy))
-                  pradc(ix,iy) = pradcff(ix,iy)
+		  pradc = 0.
+		  do igsp = 1, nzspff   #..zml
+		    afrac(ix,iy) = afrac_mul(ix,iy,igsp)
+                    na(ix,iy) = afrac(ix,iy) * ne(ix,iy)
+                    pradcff(ix,iy) = na(ix,iy) * ne(ix,iy) *
+     .                 emissbs_mul (te(ix,iy), nratio(ix,iy), ntau(ix,iy), igsp)
+                    na_mul(ix,iy,igsp) = na(ix,iy)
+		    pradcff_mul(ix,iy,igsp) = pradcff(ix,iy)
+                    pradc(ix,iy) = pradc(ix,iy)+pradcff(ix,iy)
+		  enddo
                   pwrzec(ix,iy) = pradc(ix,iy)
                elseif (isimpon .eq. 3) then   # average-ion model
                   na(ix,iy) = ni(ix,iy,nhsp+1)
@@ -4737,10 +4743,15 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                   enddo
 
 		  if (isimpon .eq. 7) then  # add fixed-fraction contrib
-                     na(ix,iy) = afrac(ix,iy) * ne(ix,iy)
-                     pradcff(ix,iy) = na(ix,iy)* ne(ix,iy)*
-     .                     emissbs(te(ix,iy), nratio(ix,iy), ntau(ix,iy))
-                     pradc(ix,iy) = pradc(ix,iy) + pradcff(ix,iy)
+	             do igsp = 1, nzspff   #..zml
+                       afrac(ix,iy) = afrac_mul(ix,iy,igsp)
+                       na(ix,iy) = afrac(ix,iy) * ne(ix,iy)
+                       pradcff(ix,iy) = na(ix,iy)* ne(ix,iy)*
+     .                       emissbs_mul(te(ix,iy), nratio(ix,iy), ntau(ix,iy), igsp)
+                       na_mul(ix,iy,igsp) = na(ix,iy)
+                       pradcff_mul(ix,iy,igsp) = pradcff(ix,iy)
+                       pradc(ix,iy) = pradc(ix,iy) + pradcff(ix,iy)
+		     enddo
                      pwrzec(ix,iy) = pwrzec(ix,iy) + pradcff(ix,iy)
                   endif
 

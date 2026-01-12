@@ -3013,6 +3013,7 @@ phis(0:nxold+1,0:nyold+1)       _real [V]    #potential at last success. calc
 ups(0:nxold+1,0:nyold+1,1:nisp) _real [m/s]  #parall. vel at last success. calc
 ngs(0:nxold+1,0:nyold+1,1:ngsp) _real [m^-3] #gas dens at last success. calc.
 afracs(0:nxold+1,0:nyold+1)     _real [ ]    +input #rel. imp. frac at last succ. calc
+afracs_mul(0:nxold+1,0:nyold+1,1:nzspff)     _real [ ]    +input #..zml rel. imp. frac of multi species at last succ. calc
 
 ***** Global_vars:
 # Arrays for primary variables over full mesh for domain decomposition
@@ -3741,6 +3742,8 @@ pradc(0:nx+1,0:ny+1)	_real	[Watts/m**3]
                                # cell ctr total impurity radiation
 pradcff(0:nx+1,0:ny+1)	_real	[Watts/m**3]
                                # cell ctr impurity radiation (fixed-fraction)
+pradcff_mul(0:nx+1,0:ny+1,1:nzspff)  _real   [Watts/m**3]
+                               #..zml cell ctr impurity radiation (multi species fixed-fraction)
 prad(0:nx+1,0:ny+1)	_real	[Watts/m**3]
                                # cell ave total impurity radiation
 pradzc(0:nx+1,0:ny+1,0:nzspmx,1:ngsp-1)	_real	[Watts/m**3]
@@ -3749,12 +3752,16 @@ pradz(0:nx+1,0:ny+1,0:nzspmx,1:ngsp-1)	_real	[Watts/m**3]
                                # cell ave imp rad due to each imp. ch. state
 na(0:nx+1,0:ny+1)	_real	[/m**3]
                                # atomic density of impurity (=afrac*ne)
+na_mul(0:nx+1,0:ny+1,1:nzspff)       _real   [/m**3]
+                               #..zml atomic density of impurity (=afrac*ne)
 ntau(0:nx+1,0:ny+1)	_real	[sec/m**3]
                                # confinement parameter for impurity (=atau*ne)
 nratio(0:nx+1,0:ny+1)	_real
                                # ratio of neutrals to electrons
 afrac(0:nx+1,0:ny+1)	_real	/.00/ +maybeinput
                                # atomic impur conc; set internally to afracs
+afrac_mul(0:nx+1,0:ny+1,1:nzspff)    _real   /.00/ +maybeinput
+                               #..zml atomic impur conc; set internally to afracs
 atau(0:nx+1,0:ny+1)	_real	/1./	[sec] +input
                                # lifetime of impurity
 tau1(0:nx+1,0:ny+1)	_real	# time to escape to inboard divertor plate
