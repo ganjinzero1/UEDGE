@@ -871,13 +871,45 @@ fngytelein(0:nx+1,ngspmx)               _real      # flux of tele-transport neut
 	                                           # = fngyteleout*cftelematrix
 fngytelemaxw(0:nx+1,ngspmx)             _real      # flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
 fngytelediff(0:nx+1,ngspmx)             _real      # flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
+                                                   # Three compoments: fngytelediff1 + fngytelediff2 + fngytelediff3
+                                                   # 1) fngytelediff1 = c1*ng
+                                                   # 2) fngytelediff2 = c2*dng/dtau, where dng/dtau is gradient of ng parallel to the wall
+                                                   # 3) fngytelediff3 = c3*dng/dnu,  where dng/dnu  is gradient of ng along the wall normal
+fngytelediff1(0:nx+1,ngspmx)             _real     # first component of fngytelediff
+fngytelediff2(0:nx+1,ngspmx)             _real     # second component of fngytelediff
+fngytelediff3(0:nx+1,ngspmx)             _real     # third component of fngytelediff
 lteleout   real     [m] /1./   +input # scale length used to calculate neutral Knusen number, Kn = lmfp/lteleout
+Kn(0:nx+1,ngspmx)           _real     # Knusen number at the outer boundary, = lmfpn/lteleout, where lmfpn = sqrt(Tg/mg)/nucx
 Knb1       real         /0.01/ +input # lower bound of Knusen number
 Knb2       real         /1./  +input # upper bound of Knusen number
                                       # if Kn <= Knb1, fngyteleout = fngytelediff
                                       # else if Kn >= Knb2, fngyteleout = fngytelemaxw
                                       # else   fngyteleout = c1*fngytelemaxw + c2*fngytelediff
                                       #       where c1 = (Kn-Knb1)/(Knb2-Knb1), and c2 = 1-c1
+fmgyteleout(0:nx+1,ngsp)   _real      # mom. flux of tele-transport neutral going out of the outer boundary,
+fmgytelein(0:nx+1,ngsp)    _real      # mom. flux of tele-transport neutral coming back into the outer boundary,
+                                      # = 0. for current model, assuming wall absorb all the mom. and energy
+fmgytelemaxw(0:nx+1,ngsp)  _real      # mom. flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
+fmgytelediff(0:nx+1,ngsp)  _real      # mom. flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
+                                      # Three compoments: fmgytelediff1 + fmgytelediff2 + fmgytelediff3
+                                      # 1) fmgytelediff1 = fngytelediff1*mu_p
+                                      # 2) fmgytelediff2 = fngytelediff2*mu_p + 'something' ('something' ignored for current model)
+                                      # 3) fmgytelediff3 = fngytelediff3*mu_p
+fmgytelediff1(0:nx+1,ngsp)  _real     # first component of fmgytelediff
+fmgytelediff2(0:nx+1,ngsp)  _real     # second component of fmgytelediff
+fmgytelediff3(0:nx+1,ngsp)  _real     # third component of fmgytelediff
+fegyteleout(0:nx+1,ngsp)   _real      # eng. flux of tele-transport neutral going out of the outer boundary,
+fegytelein(0:nx+1,ngsp)    _real      # eng. flux of tele-transport neutral coming back into the outer boundary,
+                                      # = 0. for current model, assuming wall absorb all the mom. and energy
+fegytelemaxw(0:nx+1,ngsp)  _real      # eng. flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
+fegytelediff(0:nx+1,ngsp)  _real      # eng. flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
+                                      # Three compoments: fegytelediff1 + fegytelediff2 + fegytelediff3
+                                      # 1) fegytelediff1 = fngytelediff1*(0.5mu_p^2 + 2Ti)
+                                      # 2) fegytelediff2 = fngytelediff2*(0.5mu_p^2 + 5/2Ti)
+                                      # 3) fegytelediff3 = fngytelediff3*(0.5mu_p^2 + 5/2Ti)
+fegytelediff1(0:nx+1,ngsp)  _real     # first component of fegytelediff
+fegytelediff2(0:nx+1,ngsp)  _real     # second component of fegytelediff
+fegytelediff3(0:nx+1,ngsp)  _real     # third component of fegytelediff
 
 ***** Outpwall:
 # Arrays used to communicate wall fluxes to a wall simulation code
@@ -1945,6 +1977,7 @@ feiy(0:nx+1,0:ny+1)        _real [J/s]  #radial ion thermal current, north face
 fegx(0:nx+1,0:ny+1,ngsp)   _real [J/s]  #poloidal neut thermal curr, east face ### IJ 2016/09/2
 fegy(0:nx+1,0:ny+1,ngsp)   _real [J/s]  #radial neut thermal curr, north face  ### IJ 2016/09/22
 fegxy(0:nx+1,0:ny+1,ngsp)  _real [J/s]  #pol. nonog neut thermal curr, north face 
+f
 isfegxyqflave            integer  /0/   +input #=0fegxy T*vt,ng ave;=1, use harm aves
 cfegxy                      real  /1./  +input #coeff multiple fegxy
 qipar(0:nx+1,0:ny+1,nisp)  _real [J/m**2s] #parallel conductive ion heat flux
