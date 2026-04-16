@@ -1966,6 +1966,7 @@ c     Ionization of neutral hydrogen by electrons and recombination--
                psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
      .                            (ngbackg(igsp)/ng(ix,iy,igsp))**ingb) ) * 
      .                             nuiz(ix,iy,igsp) * vol(ix,iy)
+     .                                              * cfbackg(igsp)  #..zml
                psorgc(ix,iy,igsp) = -ng(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy) +
      .                              psorbgg(ix,iy,igsp)
                psorc(ix,iy,ifld) = - psorgc(ix,iy,igsp)
@@ -2117,6 +2118,7 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
 			 psorbgg(ix,iy,jg)= ngbackg(jg)*
      .                     (0.9+0.1*(ngbackg(jg)/ng(ix,iy,jg))**ingb) * 
      .                                                      nevol*kionz0
+     .                                                    * cfbackg(jg)  #..zml
                          psorg(ix,iy,jg) = -ng(ix,iy,jg)*nevol*kionz0 +
      .                                      psorbgg(ix,iy,jg)
                          psor(ix,iy,ifld_fcs) = - psorg(ix,iy,jg)

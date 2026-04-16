@@ -6701,6 +6701,21 @@ c   Check model switches for UEDGE updates/bugs
             write(*,*) "atom energy equation. "
             write(*,*) ""
       endif
+      #if (isvacuummodel(1) .gt. 0) then
+      #      write(*,*) ""
+      #      write(*,*) ""
+      #      write(*,*) "           **** WARNING ****"
+      #      write(*,*) "You are using neutral vacuum transport model with isvacuummodel > 0"
+      #      if (isvacuummodel(1) .eq. 1) then
+      # 	  write(*,*) "You set isvacuummodel(1) = 1, a DEGAS2 pre-calculated tele-transport matrix is required"
+      #      else if (isvacuummodel(1) .eq. 2) then
+      #           write(*,*) "You set isvacuummodel = 2, a gemetric model in UETOOLS is used to calculate tele-transport matrix"
+      #      endif
+      #      write(*,*) "Here is your current tele-transport Matrix"
+      #      if (cftelematrix(1,1,1) .eq. 0.0) then
+      #          write(*,*) "All elements are ZEROS, you HAVE NOT set up your tele-transport matrix"
+      #      endif
+      #endif
 
 
 

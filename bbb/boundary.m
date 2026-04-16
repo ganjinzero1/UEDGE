@@ -36,6 +36,8 @@ c-----------------------------------------------------------------------
                     # fchemygwi,fchemylb,fphysylb,fchemygwo,fchemyrb,fphysyrb
                     # xcnearlb,xcnearrb,openbox,fqpsatlb,fqpsatrb
                     # cfueb,ikapmod,cfvytanbc
+		    # cftelematrix,fngyteleout,fngytelein,cfpuffmatrix
+		    # fngytelemaxw,fngytelediff,lteleout,Knb1,Knb2
       Use(Parallv)  # nxg,nyg
       Use(Selec)    # i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7,xlinc
       Use(Comgeo)   # gx,gy,gyf,sx,sy,xcwi,xcwo,yylb,rrv,sygytotc,isixcore
@@ -82,6 +84,7 @@ c...  local scalars
       #Former Aux module variables
       integer ix,iy,igsp,iv,iv1,iv2,iv3,iv4,ix1,ix2,ix3,ix4
       real t0,t1
+      real Mi_nu,Mi_taunu,Mi_nunu,dng2dnu,dng2dtau,lmfpn,Kn
 
 *  -- external procedures --
       real sdot, yld96, kappa
@@ -1131,6 +1134,73 @@ c...  if extrapolation b.c.on outer wall, isextrw=1, otherwise isextrw=0
       if (iymxbcl .eq. 0) goto 1200  #skip setting eqn because interior bdry
       if (j7 .ge. (ny+1)-isextrnw .or. j7 .ge. (ny+1)-isextrtw) then
       do 280 ifld = 1 , nisp
+        if (isupgon(1) .eq. 1 .and. zi(ifld) .eq. 0.0 .and. isvacuummodel(1) .gt. 0) then
+            if (isvacuummodel(1) .eq. 1) then  # half-Maxwellian
+	      do ix = 0, nx+1
+	        t0 = max(tg(ix,ny,1),tgmin*ev)
+		vyn = sqrt( 0.5*t0/(pi*mi(ifld)) )
+                fngytelemaxw(ix,1) = cfteleout*ni(ix,ny,ifld)*vyn*sy(ix,ny)
+	        fngyteleout(ix,1) = fngytelemaxw(ix,1)
+	      enddo
+            elseif (isvacuummodel(1) .eq. 2) then  # CX diff, Eq.(3.88) in AFN manual from KU Lueven
+              do ix = 0, nx+1
+                ix1 = ixm1(ix,iy)
+                ix2 = ixp1(ix,iy)
+                t0 = max(ti(ix,ny),temin*ev)
+                Mi_nu = -sqrt( 0.5*t0/(pi*mi(1)) )
+                Mi_taunu = -0.5*( up(ix,ny,0)*rrv(ix,ny) + up(ix1,ny,0)*rrv(ix1,ny) )*Mi_nu  # = Utau*Mi_nu
+                Mi_nunu = 0.5*t0/mi(1)
+                dng2dnu = -0.5*( (ngy1(ix,ny,1) - ngy0(ix,ny,1))/dynog(ix,ny)
+     .                       + (ngy1(ix,ny-1,1) - ngy0(ix,ny-1,1))/dynog(ix,ny-1) )
+                dng2dtau = -0.5*( (ng(ix2,ny,1) - ng(ix,ny,1))*gxf(ix,ny)
+     .                          + (ng(ix,ny,1) - ng(ix1,ny,1))*gxf(ix1,ny) )
+                fngytelediff(ix,1) = -cfteleout * nucx(ix,iy,1)/(nucx(ix,iy,1)+nuiz(ix,iy,1)) *
+     .                                ( ng(ix,iy,1)*Mi_nu - 
+     .                                  (dng2dtau*Mi_taunu+dng2dnu*Mi_nunu)/
+     .                                  (nucx(ix,iy,1)+nuiz(ix,iy,1)) )*sy(ix,ny)
+                fngyteleout(ix,1) = max(fngytelediff(ix,1),0.)
+              enddo
+            elseif (isvacuummodel(1) .eq. 3) then
+              do ix = 0, nx+1
+                # half-Maxwellian
+                t0 = max(tg(ix,ny,1),tgmin*ev)
+                vyn = sqrt( 0.5*t0/(pi*mi(ifld)) )
+                fngytelemaxw(ix,1) = cfteleout*ni(ix,ny,ifld)*vyn*sy(ix,ny)
+                # CX diffusion
+                ix1 = ixm1(ix,iy)
+                ix2 = ixp1(ix,iy)
+                t1 = max(ti(ix,ny),temin*ev)
+                Mi_nu = -sqrt( 0.5*t1/(pi*mi(1)) )
+                Mi_taunu = -0.5*( up(ix,ny,0)*rrv(ix,ny) + up(ix1,ny,0)*rrv(ix1,ny) )*Mi_nu  # = Utau*Mi_nu
+                Mi_nunu = 0.5*t0/mi(1)
+                dng2dnu = -0.5*( (ngy1(ix,ny,1) - ngy0(ix,ny,1))/dynog(ix,ny)
+     .                       + (ngy1(ix,ny-1,1) - ngy0(ix,ny-1,1))/dynog(ix,ny-1) )
+                dng2dtau = -0.5*( (ng(ix2,ny,1) - ng(ix,ny,1))*gxf(ix,ny)
+     .                          + (ng(ix,ny,1) - ng(ix1,ny,1))*gxf(ix1,ny) )
+                fngytelediff(ix,1) = -cfteleout * nucx(ix,iy,1)/(nucx(ix,iy,1)+nuiz(ix,iy,1)) *
+     .                                ( ng(ix,iy,1)*Mi_nu -
+     .                                    (dng2dtau*Mi_taunu+dng2dnu*Mi_nunu)/
+     .                                    (nucx(ix,iy,1)+nuiz(ix,iy,1)) )*sy(ix,ny)
+                lmfpn = sqrt(t0/mi(ifld))/nucx(ix,iy,1)
+                Kn = lmfpn/lteleout
+                if (Kn <= Knb1) then
+                    fngyteleout(ix,1) = max(fngytelediff(ix,1),0.)
+                elseif (Kn >= Knb2) then
+                    fngyteleout(ix,1) = fngytelemaxw(ix,1)
+                else
+                    fngyteleout(ix,1) = (Kn-Knb1)/(Knb2-Knb1)*fngytelemaxw(ix,1) +
+     .                                  (Knb2-Kn)/(Knb2-Knb1)*max(fngytelediff(ix,1),0.)
+                endif
+              enddo
+            else
+              write (*,*) 'isvacuummodel > 3 not available, placeholder for future extention'
+            endif
+	    do ix = 0, nx+1
+                t0 = max(tg(ix,ny,1),tgmin*ev)
+                vyn = sqrt( 0.5*t0/(pi*mi(ifld)) )
+                fngytelein(ix,1) = sum(fngyteleout(:,1)*cftelematrix(:,ix,1))
+            enddo
+	endif
         do 278 ix = i4+1-ixmnbcl, i8-1+ixmxbcl
           if (isnionxy(ix,ny+1,ifld)==1) then
             iv1 = idxn(ix,ny+1,ifld)
@@ -1151,6 +1221,7 @@ c ---  typically hydrogen only, so DIVIMP chem sputt not used here
                 nharmave = 2.*(ni(ix,ny,ifld)*ni(ix,ny+1,ifld)) /
      ,                        (ni(ix,ny,ifld)+ni(ix,ny+1,ifld))
                 fng_alb = (1-albedoo(ix,1))*nharmave*vyn*sy(ix,ny)
+		if (isvacuummodel(1) .gt. 0) fng_alb = fngyteleout(ix,1) - fngytelein(ix,1)
                 yldot(iv1) = nurlxg*( fniy(ix,ny,ifld) - fng_alb + 
      .                             fng_chem ) / (vyn*sy(ix,ny)* n0(ifld))
 

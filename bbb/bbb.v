@@ -67,6 +67,8 @@ cfrecom   real            /1./ +input
 igas      integer         /0/     +input #=1 invokes local rate eqn. for ng
 ngbackg(ngspmx) real [1/m**3] /ngspmx*1.e14/ +input 
                                   #background gas density
+cfbackg(ngspmx) real          /ngspmx*1./ +input
+                                  #..zml background gas source rescale factor
 ingb      integer         /2/     +input 
                                   #background gas source=nuiz*ngbackg*
                                   #                  (.9+.1*(ngbackg/ng)**ingb)
@@ -857,6 +859,25 @@ cftgtipltl(ngspmx)  real   /ngspmx*1./    +input #left plate Tg B.C.: tg = cftgt
 cftgtipltr(ngspmx)  real   /ngspmx*1./    +input #right plate Tg B.C.: tg = cftgtipltr*ti if istgrb=5
 cgengmpl  real		 /1./   +input #scale fac mol plate eng loss for Maxw
 cgengmw  real		 /1./   +input #scale fac mol wall eng loss for Maxw
+isvacuummodel(ngspmx)     integer /6*0/ +input #user:(=0) default model for neutral outer boundary conditions
+                                               #     (=1) using DEGAS2-calculated tele-transport matrix
+                                               #     (=2) using analytically-calculated tele-transport matrix
+cftelematrix(0:nx+1,0:nx+1,ngspmx) _real /0./ +maybeinput # tele-transport matrix if isvacuummodel = 1,2
+cfpuffmatrix(0:nx+1,ngspmx)             _real /0./ +maybeinput # puffing matrix if isvacuummodel = 1,2
+                                                               # assuming point puff source, so, the matrix shape is (1,nx)
+cfteleout  real         /1./    +input # scale fac tele-transport neutral source for half-Maxw
+fngyteleout(0:nx+1,ngspmx)              _real      # flux of tele-transport neutral going out of the outer boundary,
+fngytelein(0:nx+1,ngspmx)               _real      # flux of tele-transport neutral coming back into the outer boundary,
+	                                           # = fngyteleout*cftelematrix
+fngytelemaxw(0:nx+1,ngspmx)             _real      # flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
+fngytelediff(0:nx+1,ngspmx)             _real      # flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
+lteleout   real     [m] /1./   +input # scale length used to calculate neutral Knusen number, Kn = lmfp/lteleout
+Knb1       real         /0.01/ +input # lower bound of Knusen number
+Knb2       real         /1./  +input # upper bound of Knusen number
+                                      # if Kn <= Knb1, fngyteleout = fngytelediff
+                                      # else if Kn >= Knb2, fngyteleout = fngytelemaxw
+                                      # else   fngyteleout = c1*fngytelemaxw + c2*fngytelediff
+                                      #       where c1 = (Kn-Knb1)/(Knb2-Knb1), and c2 = 1-c1
 
 ***** Outpwall:
 # Arrays used to communicate wall fluxes to a wall simulation code
