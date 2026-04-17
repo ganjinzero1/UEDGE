@@ -1979,7 +1979,6 @@ feiy(0:nx+1,0:ny+1)        _real [J/s]  #radial ion thermal current, north face
 fegx(0:nx+1,0:ny+1,ngsp)   _real [J/s]  #poloidal neut thermal curr, east face ### IJ 2016/09/2
 fegy(0:nx+1,0:ny+1,ngsp)   _real [J/s]  #radial neut thermal curr, north face  ### IJ 2016/09/22
 fegxy(0:nx+1,0:ny+1,ngsp)  _real [J/s]  #pol. nonog neut thermal curr, north face 
-f
 isfegxyqflave            integer  /0/   +input #=0fegxy T*vt,ng ave;=1, use harm aves
 cfegxy                      real  /1./  +input #coeff multiple fegxy
 qipar(0:nx+1,0:ny+1,nisp)  _real [J/m**2s] #parallel conductive ion heat flux

@@ -1293,11 +1293,11 @@ c...  Do the parallel velocity BC along iy = ny+1
                if (isupgon(1) .eq. 1 .and. zi(ifld) .eq. 0.0 .and. isvacuummodel(1) .gt. 0) then
                  ix1 = ixm1(ix,iy)
                  # Maxwellian
-                 fmgytelemaxw(ix,1) = 0.5*fngytelemaxw(ix,1)*mg(1)*(up(ix,com.ny,ifld)+up(ix1,com.ny,ifld))
+                 fmgytelemaxw(ix,1) = 0.5*fngytelemaxw(ix,1)*mg(1)*(up(ix,ny,ifld)+up(ix1,ny,ifld))
                  # CX diffusion
-                 fmgytelediff1(ix,1) = 0.5*fngytelediff1(ix,1)*mg(1)*(up(ix,com.ny,ifld)+up(ix1,com.ny,ifld))
-                 fmgytelediff2(ix,1) = 0.5*fngytelediff2(ix,1)*mg(1)*(up(ix,com.ny,ifld)+up(ix1,com.ny,ifld)) #..approximation, omitting small terms
-                 fmgytelediff3(ix,1) = 0.5*fngytelediff3(ix,1)*mg(1)*(up(ix,com.ny,ifld)+up(ix1,com.ny,ifld))
+                 fmgytelediff1(ix,1) = 0.5*fngytelediff1(ix,1)*mg(1)*(up(ix,ny,ifld)+up(ix1,ny,ifld))
+                 fmgytelediff2(ix,1) = 0.5*fngytelediff2(ix,1)*mg(1)*(up(ix,ny,ifld)+up(ix1,ny,ifld)) #..approximation, omitting small terms
+                 fmgytelediff3(ix,1) = 0.5*fngytelediff3(ix,1)*mg(1)*(up(ix,ny,ifld)+up(ix1,ny,ifld))
                  fmgytelediff(ix,1) = cfteleout*(fmgytelediff1(ix,1) + fmgytelediff2(ix,1) + fmgytelediff3(ix,1))
                  # Trim diffusion to avoid negative influx
                  if (fngytelediff(ix,1) .gt. 0.) then
@@ -1431,6 +1431,7 @@ ccc  - - - - - - - - - - - - - -
 
          if(istionxy(ix,ny+1) .eq. 1) then
            iv2 = idxti(ix,ny+1)
+           #..placeholder for VNM without solving the Tg equation
            if (istiwcix(ix) .eq. 0) then       # fix flux to zero
              yldot(iv2) = nurlxi*(feiy(ix,ny)/(n0(1)*vpnorm*sy(ix,ny)))
      .                                                      / (temp0*ev)
