@@ -890,6 +890,7 @@ fmgyteleout(0:nx+1,ngsp)   _real      # mom. flux of tele-transport neutral goin
 fmgytelein(0:nx+1,ngsp)    _real      # mom. flux of tele-transport neutral coming back into the outer boundary,
                                       # = 0. for current model, assuming wall absorb all the mom. and energy
 fmgytelemaxw(0:nx+1,ngsp)  _real      # mom. flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
+                                      # fegytelemaxw = fngytelemaxw*mu_p
 fmgytelediff(0:nx+1,ngsp)  _real      # mom. flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
                                       # Three compoments: fmgytelediff1 + fmgytelediff2 + fmgytelediff3
                                       # 1) fmgytelediff1 = fngytelediff1*mu_p
@@ -902,11 +903,12 @@ fegyteleout(0:nx+1,ngsp)   _real      # eng. flux of tele-transport neutral goin
 fegytelein(0:nx+1,ngsp)    _real      # eng. flux of tele-transport neutral coming back into the outer boundary,
                                       # = 0. for current model, assuming wall absorb all the mom. and energy
 fegytelemaxw(0:nx+1,ngsp)  _real      # eng. flux of tele-transport neutral going out of the outer boundary, assuming half-Maxw
+                                      # fegytelemaxw = fngytelemaxw*(0.5mu_p^2 + 2T), omit 0.5mu_p^2 for internal
 fegytelediff(0:nx+1,ngsp)  _real      # eng. flux of tele-transport neutral going out of the outer boundary, assuming CX diffusion
                                       # Three compoments: fegytelediff1 + fegytelediff2 + fegytelediff3
-                                      # 1) fegytelediff1 = fngytelediff1*(0.5mu_p^2 + 2Ti)
-                                      # 2) fegytelediff2 = fngytelediff2*(0.5mu_p^2 + 5/2Ti)
-                                      # 3) fegytelediff3 = fngytelediff3*(0.5mu_p^2 + 5/2Ti)
+                                      # 1) fegytelediff1 = fngytelediff1*(0.5mu_p^2 + 2Ti), omit 0.5mu_p^2 for internal
+                                      # 2) fegytelediff2 = fngytelediff2*(0.5mu_p^2 + 5/2Ti), omit 0.5mu_p^2 for internal
+                                      # 3) fegytelediff3 = fngytelediff3*(0.5mu_p^2 + 5/2Ti), omit 0.5mu_p^2 for internal
 fegytelediff1(0:nx+1,ngsp)  _real     # first component of fegytelediff
 fegytelediff2(0:nx+1,ngsp)  _real     # second component of fegytelediff
 fegytelediff3(0:nx+1,ngsp)  _real     # third component of fegytelediff

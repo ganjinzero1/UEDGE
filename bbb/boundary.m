@@ -37,7 +37,10 @@ c-----------------------------------------------------------------------
                     # xcnearlb,xcnearrb,openbox,fqpsatlb,fqpsatrb
                     # cfueb,ikapmod,cfvytanbc
 		    # cftelematrix,fngyteleout,fngytelein,cfpuffmatrix
-		    # fngytelemaxw,fngytelediff,lteleout,Knb1,Knb2
+		    # fngytelemaxw,fngytelediff,fngytelediff1,fngytelediff2,fngytelediff3
+		    # lteleout,Knb1,Knb2,Kn
+		    # fmgytelemaxw,fmgytelediff,fmgytelediff1,fmgytelediff2,fmgytelediff3
+		    # fegytelemaxw,fegytelediff,fegytelediff1,fegytelediff2,fegytelediff3
       Use(Parallv)  # nxg,nyg
       Use(Selec)    # i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7,xlinc
       Use(Comgeo)   # gx,gy,gyf,sx,sy,xcwi,xcwo,yylb,rrv,sygytotc,isixcore
@@ -1558,7 +1561,38 @@ c... BC for neutral gas temperature/energy at iy=ny+1
           if (istgonxy(ix,ny+1,igsp) == 1) then
             iv = idxtg(ix,ny+1,igsp)
             if (isvacuummodel(igsp) .gt. 0) then
-              #fegytelemaxw(ix,igsp) = 
+              fegytelemaxw(ix,igsp) = fngytelemaxw(ix,igsp)*2.*tg(ix,ny,igsp)
+              fegytelediff1(ix,igsp) = fngytelediff1(ix,igsp)*2.*tg(ix,ny,igsp)
+              fegytelediff2(ix,igsp) = fngytelediff2(ix,igsp)*2.5*tg(ix,ny,igsp)
+              fegytelediff3(ix,igsp) = fngytelediff3(ix,igsp)*2.5*tg(ix,ny,igsp)
+              fegytelediff(ix,igsp) = cfteleout*(fegytelediff1(ix,igsp) + fegytelediff2(ix,igsp) + fegytelediff3(ix,igsp))
+              # Trim diffusion to avoid negative influx
+              if (fngytelediff(ix,igsp) .gt. 0.) then
+                fteledifftrim = fegytelediff(ix,igsp)
+              else
+                fteledifftrim = 0.
+              endif
+              # compute fegyteleout
+              if (isvacuummodel(igsp) .eq. 1) then
+                fegyteleout(ix,igsp) = fegytelemaxw(ix,igsp)
+              elseif (isvacuummodel(igsp) .eq. 2) then
+                fegyteleout(ix,igsp) = fteledifftrim
+              elseif (isvacuummodel(igsp) .eq. 3) then
+                if (Kn(ix,igsp) <= Knb1) then
+                  fegyteleout(ix,igsp) = fteledifftrim
+                elseif (Kn(ix,igsp) >= Knb2) then
+                  fegyteleout(ix,igsp) = fegytelemaxw(ix,igsp)
+                else
+                  fegyteleout(ix,igsp) = (Kn(ix,igsp)-Knb1)/(Knb2-Knb1)*fegytelemaxw(ix,igsp) +
+     .                                   (Knb2-Kn(ix,igsp))/(Knb2-Knb1)*fteledifftrim
+                endif
+              else
+                write (*,*) 'isvacuummodel > 3 not available, placeholder for future extention'
+              endif
+              # place holder for momentu influx fmgytelein
+              fegytelein(ix,igsp) = 0.
+              yldot(iv) = nurlxg*( fegy(ix,ny,igsp) - (fegyteleout(ix,igsp)-fegytelein(ix,igsp)) )/
+     .                                      (sy(ix,ny)*vpnorm*ennorm)
             else
               if (istgwcix(ix,igsp) == 0) then    # fixed Tg
                 yldot(iv) = nurlxg*(tgwall(igsp)*ev-tg(ix,ny+1,igsp))/
