@@ -87,7 +87,7 @@ c...  local scalars
       #Former Aux module variables
       integer ix,iy,igsp,iv,iv1,iv2,iv3,iv4,ix1,ix2,ix3,ix4
       real t0,t1
-      real Mi_nu,Mi_taunu,Mi_nunu,dng2dnu,dng2dtau,lmfpn,fteledifftrim
+      real Mi_nu,Mi_taunu,Mi_nunu,dng2dnu,dng2dtau,lmfpn,fteledifftrim,fngytelelim
 
 *  -- external procedures --
       real sdot, yld96, kappa
@@ -1144,8 +1144,8 @@ c...  if extrapolation b.c.on outer wall, isextrw=1, otherwise isextrw=0
               vyn = sqrt( 0.5*t0/(pi*mi(ifld)) )
               fngytelemaxw(ix,1) = cfteleout*ni(ix,ny,ifld)*vyn*sy(ix,ny)
               # CX diffusion
-              ix1 = ixm1(ix,iy)
-              ix2 = ixp1(ix,iy)
+              ix1 = ixm1(ix,ny)
+              ix2 = ixp1(ix,ny)
               t1 = max(ti(ix,ny),temin*ev)
               Mi_nu = -sqrt( 0.5*t1/(pi*mi(1)) )
               Mi_taunu = -0.5*( up(ix,ny,0)*rrv(ix,ny) + up(ix1,ny,0)*rrv(ix1,ny) )*Mi_nu  # = Utau*Mi_nu
@@ -1154,12 +1154,18 @@ c...  if extrapolation b.c.on outer wall, isextrw=1, otherwise isextrw=0
      .                     + (ngy1(ix,ny-1,1) - ngy0(ix,ny-1,1))/dynog(ix,ny-1) )
               dng2dtau = -0.5*( (ng(ix2,ny,1) - ng(ix,ny,1))*gxf(ix,ny)
      .                        + (ng(ix,ny,1) - ng(ix1,ny,1))*gxf(ix1,ny) )
-              fngytelediff1(ix,1) = - nucx(ix,iy,1)/(nucx(ix,iy,1)+nuiz(ix,iy,1)) *
-     .                                ng(ix,iy,1)*Mi_nu * sy(ix,ny)
-              fngytelediff2(ix,1) =   nucx(ix,iy,1)/(nucx(ix,iy,1)+nuiz(ix,iy,1))**2 *
+              fngytelediff1(ix,1) = - nucx(ix,ny,1)/(nucx(ix,ny,1)+nuiz(ix,ny,1)) *
+     .                                ng(ix,ny,1)*Mi_nu * sy(ix,ny)
+              fngytelediff2(ix,1) =   nucx(ix,ny,1)/(nucx(ix,ny,1)+nuiz(ix,ny,1))**2 *
      .                                dng2dtau*Mi_taunu * sy(ix,ny)
-              fngytelediff3(ix,1) =   nucx(ix,iy,1)/(nucx(ix,iy,1)+nuiz(ix,iy,1))**2 *
+              fngytelediff30(ix,1) =   nucx(ix,ny,1)/(nucx(ix,ny,1)+nuiz(ix,ny,1))**2 *
      .                                dng2dnu*Mi_nunu * sy(ix,ny)
+              # The third component is dominant in divertor regions and can cause numerical instability
+              # We add a flux limiter to this term fngytelediff3, 
+              # where the constant 1.2533 is a result of pi/sqrt(2*pi)
+              fngytelelim = cftelelim * 1.2533*abs(nucx(ix,ny,1)/(nucx(ix,ny,1)+nuiz(ix,ny,1))*ng(ix,ny,1)*Mi_nu * sy(ix,ny))
+              fngytelediff3(ix,1) = fngytelediff30(ix,1)/ 
+     .                              (1 + (abs(fngytelediff30(ix,1)/fngytelelim))**ntelelim )**(1./ntelelim)
               fngytelediff(ix,1) = cfteleout * (fngytelediff1(ix,1) + 
      .                                          fngytelediff2(ix,1) + fngytelediff3(ix,1))
               fteledifftrim = max(fngytelediff(ix,1),0.)  # Trim to avoid negative influx
@@ -1168,7 +1174,7 @@ c...  if extrapolation b.c.on outer wall, isextrw=1, otherwise isextrw=0
               elseif (isvacuummodel(1) .eq. 2) then  # CX diff, Eq.(3.88) in AFN manual from KU Lueven
                 fngyteleout(ix,1) = fteledifftrim
               elseif (isvacuummodel(1) .eq. 3) then
-                lmfpn = sqrt(t0/mi(ifld))/nucx(ix,iy,1)
+                lmfpn = sqrt(t0/mi(ifld))/nucx(ix,ny,1)
                 Kn(ix,1) = lmfpn/lteleout
                 if (Kn(ix,1) <= Knb1) then
                     fngyteleout(ix,1) = fteledifftrim
@@ -1291,7 +1297,7 @@ c...  Do the parallel velocity BC along iy = ny+1
             if (isuponxy(ix,ny+1,ifld)==1) then
                iv2 = idxu(ix,ny+1,ifld)
                if (isupgon(1) .eq. 1 .and. zi(ifld) .eq. 0.0 .and. isvacuummodel(1) .gt. 0) then
-                 ix1 = ixm1(ix,iy)
+                 ix1 = ixm1(ix,ny)
                  # Maxwellian
                  fmgytelemaxw(ix,1) = 0.5*fngytelemaxw(ix,1)*mg(1)*(up(ix,ny,ifld)+up(ix1,ny,ifld))
                  # CX diffusion

@@ -878,6 +878,9 @@ fngytelediff(0:nx+1,ngspmx)             _real      # flux of tele-transport neut
 fngytelediff1(0:nx+1,ngspmx)             _real     # first component of fngytelediff
 fngytelediff2(0:nx+1,ngspmx)             _real     # second component of fngytelediff
 fngytelediff3(0:nx+1,ngspmx)             _real     # third component of fngytelediff
+fngytelediff30(0:nx+1,ngspmx)             _real     # third component of fngytelediff before applying limiter
+cftelelim  real     [m] /1./   +input # scale factor for fngytelediff3 limiter, limiting the maximum fngytelediff3 below lambda_i/lambda_n ~ 1.0
+ntelelim   real         /2./   +input # exponent for fngytelediff3 limiter
 lteleout   real     [m] /1./   +input # scale length used to calculate neutral Knusen number, Kn = lmfp/lteleout
 Kn(0:nx+1,ngspmx)           _real     # Knusen number at the outer boundary, = lmfpn/lteleout, where lmfpn = sqrt(Tg/mg)/nucx
 Knb1       real         /0.01/ +input # lower bound of Knusen number
