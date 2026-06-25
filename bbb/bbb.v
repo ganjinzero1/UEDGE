@@ -67,6 +67,10 @@ cfrecom   real            /1./ +input
 igas      integer         /0/     +input #=1 invokes local rate eqn. for ng
 ngbackg(ngspmx) real [1/m**3] /ngspmx*1.e14/ +input 
                                   #background gas density
+cfbackg(ngspmx) real          /ngspmx*1./ +input
+                                  #..zml background gas source rescale factor
+cfngeff(ngspmx) real          /ngspmx*0./ +input
+                                  #..zml modify background source
 ingb      integer         /2/     +input 
                                   #background gas source=nuiz*ngbackg*
                                   #                  (.9+.1*(ngbackg/ng)**ingb)

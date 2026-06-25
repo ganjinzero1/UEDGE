@@ -602,6 +602,7 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       real dtdym1,dtdy0,dtdyp1,d2tdy20,d2tdy2p1,d3tdy3,nhi_nha
       integer idum, idumaray(1)
       real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg, ueb
+      real ngeff  #..zml
       integer impflag
       # former Aux module variables
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
@@ -1966,6 +1967,7 @@ c     Ionization of neutral hydrogen by electrons and recombination--
                psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
      .                            (ngbackg(igsp)/ng(ix,iy,igsp))**ingb) ) * 
      .                             nuiz(ix,iy,igsp) * vol(ix,iy)
+     .                                              * cfbackg(igsp)  #..zml
                psorgc(ix,iy,igsp) = -ng(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy) +
      .                              psorbgg(ix,iy,igsp)
                psorc(ix,iy,ifld) = - psorgc(ix,iy,igsp)
@@ -2114,9 +2116,11 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
      .                                   kionz0, krecz, kcxrz)
                          endif
                          kionz0 = kionz0 + sigvi_floor
+			 ngeff = (ng(ix,iy,jg)**2 + cfngeff(jg)*ngbackg(jg)**2)**0.5  #..zml
 			 psorbgg(ix,iy,jg)= ngbackg(jg)*
-     .                     (0.9+0.1*(ngbackg(jg)/ng(ix,iy,jg))**ingb) * 
+     .                     (0.9+0.1*(ngbackg(jg)/ngeff)**ingb) * 
      .                                                      nevol*kionz0
+     .                                                    * cfbackg(jg)  #..zml
                          psorg(ix,iy,jg) = -ng(ix,iy,jg)*nevol*kionz0 +
      .                                      psorbgg(ix,iy,jg)
                          psor(ix,iy,ifld_fcs) = - psorg(ix,iy,jg)
@@ -2339,6 +2343,7 @@ c ...  molecule-molecule collisions would enter viscosity, not nuix
            psorbgg(ix,iy,2) = ngbackg(2)* 
      .                     (0.9+0.1*(ngbackg(2)/ng(ix,iy,2))**ingb ) * 
      .                                        nuiz(ix,iy,2) * vol(ix,iy)
+     .                                                      * cfbackg(2)  #..zml
            psorgc(ix,iy,2) = - ng(ix,iy,2)*nuiz(ix,iy,2)*vol(ix,iy) +
      .                        psorbgg(ix,iy,2)
            psorg(ix,iy,2) = psorgc(ix,iy,2)  # no mol sor averaging
