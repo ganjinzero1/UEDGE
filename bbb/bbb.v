@@ -67,7 +67,22 @@ cfrecom   real            /1./ +input
 igas      integer         /0/     +input #=1 invokes local rate eqn. for ng
 ngbackg(ngspmx) real [1/m**3] /ngspmx*1.e14/ +input 
                                   #background gas density
-ingb      integer         /2/     +input 
+cfbackg(ngspmx) real          /ngspmx*1./ +input
+                                  #..zml background gas source rescale factor
+cfngeff(ngspmx) real          /ngspmx*0./ +input
+                                  #..zml modify background source
+cfnwclamp(nispmx) real       /nispmx*0.1/ +input
+                                  #..zml dimensionless smoothing coefficient for the
+                                  #isnwcono/isnwconi=4 wall-flux clamp: fniy ->
+                                  #fniy/(1+exp(-+fniy/w)), a smooth sigmoid gate
+                                  #replacing the hard min/max. w = cfnwclamp*ni*
+                                  #sqrt(Ti/mi)*sy is the LOCAL thermal/free-streaming
+                                  #flux scale at that cell (not a fixed magnitude),
+                                  #so the clamp self-locates wherever a flow-reversal
+                                  #stagnation point sits, in any case/regime, with no
+                                  #hardcoded ix or absolute flux value. Recovers the
+                                  #hard clamp as cfnwclamp->0.
+ingb      integer         /2/     +input
                                   #background gas source=nuiz*ngbackg*
                                   #                  (.9+.1*(ngbackg/ng)**ingb)
 inflbg    integer         /4/     +input 
@@ -1032,6 +1047,7 @@ yinc        integer         /2/
 isjaccorall integer         /1/ #if=1 uses all ix cells for iy=0 Jac
 ixm1(0:nx+1,0:ny+1)       _integer
 ixp1(0:nx+1,0:ny+1)       _integer
+ixnupf(0:nx+1,0:ny+1)     _integer  #eff ix dens mesh at up-face; jumps incl
 iym1a(0:nx+1,0:ny+1)      _integer  # for mdsplus use only
 iyp1a(0:nx+1,0:ny+1)      _integer
 stretcx(0:nx+1,0:ny+1)    _real      #array for stretching gas x-coord.
@@ -1549,6 +1565,7 @@ lni(0:nx+1,0:ny+1,1:nisp)  _real  [m^-3]  #log(ion dens) in prim. cell (ix,iy)
 nm(0:nx+1,0:ny+1,1:nisp)   _real [kg*m^-3]#mass density [nm(,,1) is sum, exclud.
                                           #gas, if nusp=1, isimpon=5] in cell
 nz2(0:nx+1,0:ny+1)         _real  [m^-3]  #sum of ni*zi**2 over all ion species
+niupyfacetest(0:nx+1,0:ny+1) _real [m^-3] #diagnose sten logic ni on up-yface
 uu(0:nx+1,0:ny+1,1:nisp)   _real  [m/s]   #ratio ion-flux/density at x-face;
                                           #if orthog mesh, poloidal ion velocity
 uup(0:nx+1,0:ny+1,1:nisp)  _real  [m/s]   #poloidal ion vel (|| flow contrib)
@@ -1893,7 +1910,7 @@ flngxy(0:nx+1,0:ny+1,1:ngsp) _real [1/s] #nonorthog gas pol.log-cur., east face
 fngyx(0:nx+1,0:ny+1,1:ngsp) _real [1/s] #nonorthog gas rad. cur., north face
 fnixtot(0:nx+1,0:ny+1)      _real [1/s] #total poloidal ion cur.
 fniytot(0:nx+1,0:ny+1)      _real [1/s] #total radial ion cur.
-
+flimfacxf(0:nx+1,0:ny+1)    _real       #isotropic gas flux-lim factor x-face
 ***** Indexes:
 #Indices that help the calculation
 idxn(0:nx+1,0:ny+1,1:nisp)	_integer  # index of yl vector for ni(ix,iy)
