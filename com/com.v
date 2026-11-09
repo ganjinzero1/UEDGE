@@ -32,6 +32,7 @@ imx     integer /50/    # size in x of Zagorski arrays
 imy     integer /40/    # size in y of Zagorski arrays
 lnst	integer /43/    # size of impurity species(?) for Zagorski
 num_elem integer /0/    # size of expt profile vs psi arrays
+nzspff  integer  /1/    +input #..zml number of fix-frac impurity species used if isimpon = 2 or 7
 
 ***** Dimflxgrd:
 # dimensions used in both flx and grd packages
@@ -319,7 +320,8 @@ nhdf      integer /1/   # number of hydrogenic b2frates-format data files
 hdfilename(1:12)   Filename  /12*'b2frates'/  # names of hydrogenic data files
 nzdf	  integer /1/	# number of impurity   b2frates-format data files
 mcfilename(1:12)   Filename  /12*'b2frates'/  +input # names of impurity   data files
-coronalimpfname  character*120 /'mist.dat'/   +input # name coronal impurity rate file
+#coronalimpfname  character*120 /'mist.dat'/   +input # name coronal impurity rate file
+coronalimpfname(1:3)  Filename /3*'mist.dat'/   +input #..zml name coronal impurity rate file
 istabon	integer	/7/ +input
                        #turns on look-up table for hydrogenic rate coefficients
 #	= 0  simple analytic rates and constant energy loss per ionization
