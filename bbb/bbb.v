@@ -2956,6 +2956,11 @@ znuclin(1:nispmx) integer /nispmx*1./ +input #total nuclear charge of ion (i.d. 
 isallloc		integer   /0/        #=1 for local process. allocation with mpi
 newaph			integer  /1/ +input #=1 calls aphread for hyd. atomic data;=0 not
 newapi		integer /1/	     +input #=1, call readmc for new imp. data;=0, no						
+newpost		integer /1/	     +input #..zml Post fixed-fraction tables (isimpon=2,7):
+                                    #=1 read only if not loaded, or nzspff,
+                                    #   coronalimpfname or table atomic number changed
+                                    #=2 re-read at every exmain (old behaviour)
+                                    #=0 never read; use tables already in memory
 pyrestart_file    character*80 /""/ #Python file that can also be used to restart
 read_diffs		integer /0/	     +maybeinput #=0,a flag to signal whether to read diffusivities
 dif_io		integer /0/	     +maybeinput #=0,a flag to signal whether to read/write dif_use

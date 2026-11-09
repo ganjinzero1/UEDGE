@@ -671,7 +671,7 @@ c-----------------------------------------------------------------------
                     # xcs,xfs,xcwi,xcwo,yyc,yyf
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
       Use(Math_problem_size)   # neqmx,numvar
-      Use(UEint)    # newgeo,newaph,restart,initsol,ttbeg,
+      Use(UEint)    # newgeo,newaph,newpost,restart,initsol,ttbeg,
                     # tinit,tscal,ngscal,xgscal,minu,ziin,ixgb
       Use(Grid)     # ig
       Use(Compla)   # mi,zi,mg,znucl
@@ -731,6 +731,7 @@ c-----------------------------------------------------------------------
       integer ifld_fcs, ifld_lcs, igsp_lcs, jz
       #Former Aux module variables
       integer ix,iy,igsp
+      integer ifrcsrc  #..zml
       real tv
 
 *=======================================================================
@@ -1033,12 +1034,8 @@ c ... Set up tables for impurity atomic-physics processes.
       if (isimpon .eq. 1) then		# obsolete option
          call xerrab ('ueinit -- option isimpon=1 is obsolete; use 2')
       elseif (isimpon .eq. 2) then	# data supplied by D. Post 1993
-         do igsp = 1, nzspff  #..zml multi species of fixed-fraction
-           call readpost(coronalimpfname(igsp))
-           call splinem
-  	   call savemulffparam(igsp)
-           call remark('*** For isimpon=2, set afracs, not afrac ***')
-         enddo
+         call loadpostmul(nzspff, coronalimpfname, newpost) #..zml once
+         call remark('*** For isimpon=2, set afracs, not afrac ***')
       elseif ((isimpon .eq. 3) .and. (nzspt .gt. 0)) then    # avg-ion
          impflag = 1
          crni = 1.
@@ -1056,12 +1053,8 @@ c ... Set up tables for impurity atomic-physics processes.
          endif
       elseif (isimpon .eq. 7) then      # read both Post and Braams tables
 c.....First the Post table(s):
-         do igsp = 1, nzspff  #..zml multi species of fixed-fraction
-           call readpost(coronalimpfname(igsp))
-           call splinem
-	   call savemulffparam(igsp)
-           call remark('*** For isimpon=7, set afracs, not afrac ***')
-	 enddo
+         call loadpostmul(nzspff, coronalimpfname, newpost) #..zml once
+         call remark('*** For isimpon=7, set afracs, not afrac ***')
 c.....Then the Braams table(s):
          if (ismctab .eq. 1) then        # use INEL multi-charge tables
             impflag = 2
@@ -1524,21 +1517,38 @@ c.... If the grid does not change, but restart from saved variables
                 te(ix,iy)      = tes(ix,iy)
                 ti(ix,iy)      = tis(ix,iy)
                 phi(ix,iy) = phis(ix,iy)
-                if (isimpon .eq. 2 .or. isimpon .eq. 7) then
-	          do igsp = 1, nzspff   #..zml
-                    if (afracs_mul(1,1,igsp)+afracs_mul(nx,ny,igsp).gt.1.e-20) then
-                      afrac_mul(ix,iy,igsp) = afracs_mul(ix,iy,igsp)
-                    else
-                      afracs_mul(ix,iy,igsp) = 1.e-20
-                      afrac_mul(ix,iy,igsp) = afracs_mul(ix,iy,igsp)
-                      call remark('***WARNING: 
-     .                          setting afracs_mul = 1.e-20; 0 is illegal')
-                    endif
-		  enddo
-                endif
                 if (phis(nxold-1,nyold-1) .eq. 0) phi(ix,iy) = 40.  #avoid phi=0.
              enddo
           enddo
+c..zml    Set each fixed-fraction species' afrac once, outside the cell loop:
+c..zml    deciding inside the loop reads afracs_mul(1,1) after the loop has
+c..zml    already overwritten it.  Species 1 falls back to single-species afracs.
+          if (isimpon .eq. 2 .or. isimpon .eq. 7) then
+             do igsp = 1, nzspff
+                ifrcsrc = 0
+                if (afracs_mul(1,1,igsp)+afracs_mul(nx,ny,igsp) .gt. 1.e-20) then
+                   ifrcsrc = 1
+c..zml             zeros next to set cells: afracs_mul was set before the grid
+c..zml             (or nzspff) was allocated and gchange kept only a corner
+                   if (count(afracs_mul(0:nx+1,0:ny+1,igsp) .le. 0.) .gt. 0)
+     .               call remark('***WARNING: afracs_mul is 0 in some cells; '//
+     .               'set it after nx, ny and nzspff are allocated')
+                elseif (igsp .eq. 1 .and.
+     .                  afracs(1,1)+afracs(nx,ny) .gt. 1.e-20) then
+                   ifrcsrc = 2
+                else
+                   call remark('***WARNING: afracs_mul not set for a '//
+     .                  'fixed-fraction species; using 1.e-20 (0 is illegal)')
+                endif
+                do iy = 0, ny+1
+                   do ix = 0, nx+1
+                      if (ifrcsrc .eq. 2) afracs_mul(ix,iy,igsp) = afracs(ix,iy)
+                      if (ifrcsrc .eq. 0) afracs_mul(ix,iy,igsp) = 1.e-20
+                      afrac_mul(ix,iy,igsp) = afracs_mul(ix,iy,igsp)
+                   enddo
+                enddo
+             enddo
+          endif
 
        endif
 
@@ -1648,8 +1658,13 @@ c...  Interpolate the relative fraction of impurities
 #         if (isimpon>0 .and. afracs(1,1)+afracs(nxold,nyold)>1.e-20)
 #     .                        call intpvar (afracs,afrac,0,nxold,nyold)
          do igsp = 1, nzspff
-	   if (isimpon>0 .and. afracs_mul(1,1,igsp)+afracs_mul(nxold,nyold,igsp)>1.e-20)
-     .                call intpvar (afracs_mul(0:,0:,igsp),afrac_mul(0:,0:,igsp),0,nxold,nyold)
+	   if (isimpon>0 .and. afracs_mul(1,1,igsp)+afracs_mul(nxold,nyold,igsp)>1.e-20) then
+              call intpvar (afracs_mul(0:,0:,igsp),afrac_mul(0:,0:,igsp),0,nxold,nyold)
+           elseif (isimpon>0 .and. igsp==1 .and.
+     .             afracs(1,1)+afracs(nxold,nyold)>1.e-20) then
+c..zml        single-species input afracs still sets species 1
+              call intpvar (afracs,afrac_mul(0:,0:,1),0,nxold,nyold)
+           endif
          enddo
 
 c...  If phis(nx-1,ny-1)=0., reset to constant 40 volts

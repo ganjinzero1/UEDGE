@@ -186,6 +186,103 @@ c     next, for average Z**2:
 
 c----------------------------------------------------------------------c
 
+      subroutine loadpostmul (nzsp, fnames, inew)    #..zml
+      implicit none
+      integer nzsp, inew
+      character*(*) fnames(*)
+Use(P93dat)          # atn
+Use(Multi_fix_frc)   # atn_mul
+Use(Multi_fix_frc_ld)  # ipostld,nzspffld,fnameld
+
+c     Read and spline the Post fixed-fraction tables for nzsp species,
+c     but only when needed: tables are kept in memory between exmain
+c     calls instead of being re-read and re-splined every time.
+c       inew = 1: reload if nothing is loaded yet, or nzsp, a file name,
+c                 or a file's atomic number has changed since the last load
+c       inew = 2: always reload (previous behaviour)
+c       inew = 0: never reload; tables must already be in memory
+
+      integer is, iatn, ireload
+      character*256 msg
+      external xerrab, remark, readpost, splinem, savemulffparam
+      external peekpostatn
+
+c     fnameld is dimensioned nzspffmx in api.v
+      if (nzsp .lt. 1 .or. nzsp .gt. size(fnameld)) then
+         write(msg,'(a,i3,a,i3)') '*** loadpostmul: nzspff =', nzsp,
+     .        ' must be between 1 and nzspffmx =', size(fnameld)
+         call xerrab(trim(msg))
+      endif
+
+      if (inew .eq. 0) then
+         if (ipostld .eq. 0 .or. nzspffld .ne. nzsp) call xerrab(
+     .     '*** loadpostmul: newpost=0 but tables for nzspff not loaded')
+         return
+      endif
+
+      ireload = 0
+      if (inew .eq. 2 .or. ipostld .eq. 0 .or. nzspffld .ne. nzsp)
+     .   ireload = 1
+      do is = 1, nzsp
+         if (ireload .eq. 0) then
+            if (trim(fnames(is)) .ne. trim(fnameld(is))) ireload = 1
+         endif
+         if (ireload .eq. 0) then
+c           same name, but the file may differ (e.g. another case dir)
+            call peekpostatn(fnames(is), iatn)
+            if (iatn .ne. atn_mul(is)) ireload = 1
+         endif
+      enddo
+      if (ireload .eq. 0) return
+
+      do is = 1, nzsp
+         call readpost(fnames(is))
+         call splinem
+         call savemulffparam(is)
+         fnameld(is) = fnames(is)
+         write(msg,'(a,i2,a,i3,2a)') '*** fixed-fraction species', is,
+     .        ': atomic number', atn, ' from ', trim(fnames(is))
+         call remark(trim(msg))
+      enddo
+      nzspffld = nzsp
+      ipostld = 1
+
+      return
+      end
+
+c----------------------------------------------------------------------c
+
+      subroutine peekpostatn (fname, iatn)    #..zml
+      implicit none
+      character*(*) fname
+      integer iatn
+
+c     Return the atomic number in the header of a Post table without
+c     reading the table itself.
+
+      integer ios, nget, iatw, intt, inr, inn
+      external xerrab
+      data nget /56/
+
+      open (nget, file=fname, form='formatted', iostat=ios,
+     .     status='old')
+      if (ios .ne. 0) call xerrab('*** peekpostatn: cannot open '
+     .                            //trim(fname))
+      read(nget,9000)
+      read(nget,9000)
+      read(nget,9000)
+      read(nget,9000)
+      read(nget,9001) iatn, iatw, intt, inr, inn
+      close (nget)
+
+ 9000 format()
+ 9001 format(5(1x,i2/))
+
+      return
+      end
+
+c----------------------------------------------------------------------c
+
       subroutine savemulffparam (izspff)    #..zml
       implicit none
       integer izspff
@@ -194,10 +291,55 @@ Use(Imslwrk)   # nxdata_api,nydata_api,nzdata,xdata_api,ydata_api,zdata,fdata_ap
                # kxords_api,kyords_api,kzords,xknots_api,yknots_api,zknots,emcoef,
                # z1coef,z2coef
 Use(Multi_fix_frc)   # atn_mul,atw_mul,emdatm_mul,z1datm_mul,z2datm_mul,
-                     # emcoef_mul,z1coef_mul,z2coef_mul
-      external gallot
+                     # emcoef_mul,z1coef_mul,z2coef_mul,tgrid_mul,rgrid_mul,ngrid_mul
+Use(Multi_fix_frc_ld)  # ntld,nrld,nnld
+      integer i
+      real reltol
+      character*256 msg
+      external gallot, xerrab
+      data reltol /1.e-6/
 
-      if (izspff < 2) call gallot("Multi_fix_frc",0)
+c     All species share one set of spline knots (those of the last table
+c     splined), so every table must have species 1's grid.  Check before
+c     storing anything.
+      if (izspff .lt. 2) then
+         call gallot("Multi_fix_frc",0)
+         ntld = nt
+         nrld = nr
+         nnld = nn
+         do i = 1, nt
+            tgrid_mul(i) = tdatm(i,1,1)
+         enddo
+         do i = 1, nr
+            rgrid_mul(i) = rdatm(1,i,1)
+         enddo
+         do i = 1, nn
+            ngrid_mul(i) = ndatm(1,1,i)
+         enddo
+      else
+         if (nt .ne. ntld .or. nr .ne. nrld .or. nn .ne. nnld) then
+            write(msg,'(a,i2,a,3i4,a,3i4)') '*** savemulffparam: species',
+     .        izspff, ' table size', nt, nr, nn,
+     .        ' differs from species 1', ntld, nrld, nnld
+            call xerrab(trim(msg))
+         endif
+         do i = 1, nt
+            if (abs(tdatm(i,1,1)-tgrid_mul(i)) .gt.
+     .          reltol*abs(tgrid_mul(i))) call xerrab(
+     .        '*** savemulffparam: temperature grid differs from species 1')
+         enddo
+         do i = 1, nr
+            if (abs(rdatm(1,i,1)-rgrid_mul(i)) .gt.
+     .          reltol*abs(rgrid_mul(i))) call xerrab(
+     .        '*** savemulffparam: n0/ne grid differs from species 1')
+         enddo
+         do i = 1, nn
+            if (abs(ndatm(1,1,i)-ngrid_mul(i)) .gt.
+     .          reltol*abs(ngrid_mul(i))) call xerrab(
+     .        '*** savemulffparam: n*tau grid differs from species 1')
+         enddo
+      endif
+
       atn_mul(izspff) = atn
       atw_mul(izspff) = atw
       emdatm_mul(:,:,:,izspff) = emdatm(:,:,:)

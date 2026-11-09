@@ -153,9 +153,22 @@ atw_mul(nzspffmx)  integer    #..zml atomic weight
 emdatm_mul(nt,nr,nn,nzspffmx)        _real   [Watts-m**3]    #..zml emissivity
 z1datm_mul(nt,nr,nn,nzspffmx)        _real                   #..zml average Z
 z2datm_mul(nt,nr,nn,nzspffmx)        _real                   #..zml average Z**2
-emcoef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for emissivity
-z1coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for average-Z
-z2coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:3)      _real   #..zml spline coeff's for average-Z**2
+emcoef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:nzspffmx)      _real   #..zml spline coeff's for emissivity
+z1coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:nzspffmx)      _real   #..zml spline coeff's for average-Z
+z2coef_mul(1:nxdata_api,1:nydata_api,1:nzdata,1:nzspffmx)      _real   #..zml spline coeff's for average-Z**2
+tgrid_mul(nt)        _real  [J]        #..zml temperature grid of species-1 table
+rgrid_mul(nr)        _real             #..zml density-ratio grid of species-1 table
+ngrid_mul(nn)        _real  [sec/m**3] #..zml n*tau grid of species-1 table
+
+***** Multi_fix_frc_ld:
+#..zml bookkeeping so the Post fixed-fraction tables are read and splined once,
+#..zml not at every exmain (see bbb.newpost)
+ipostld     integer /0/   #..zml =1 once the fixed-fraction tables are loaded
+nzspffld    integer /0/   #..zml nzspff at the last load
+ntld        integer /0/   #..zml table grid sizes (nt,nr,nn) of species 1 at last load
+nrld        integer /0/
+nnld        integer /0/
+fnameld(nzspffmx)  Filename  #..zml coronalimpfname at the last load
 
 ***** Imslwrk:
 # working arrays for 3-d spline interpolation
