@@ -67,6 +67,10 @@ cfrecom   real            /1./ +input
 igas      integer         /0/     +input #=1 invokes local rate eqn. for ng
 ngbackg(ngspmx) real [1/m**3] /ngspmx*1.e14/ +input 
                                   #background gas density
+cfbackg(ngspmx) real          /ngspmx*1./ +input
+                                  #..zml background gas source rescale factor
+cfngeff(ngspmx) real          /ngspmx*0./ +input
+                                  #..zml modify background source
 ingb      integer         /2/     +input 
                                   #background gas source=nuiz*ngbackg*
                                   #                  (.9+.1*(ngbackg/ng)**ingb)
@@ -80,7 +84,14 @@ nzbackg(nispmx) real [1/m**3] /nispmx*1.e9/ +input #background impurity density
 inzb      integer         /2/     +input
                                   #background impurity source=nuiz*nzbackg*
                                   #                 (.9+.1*(nzbackg/nzi)**ingb)
-facnzbackg2nis(nispmx) real /nispmx*1.e-8/ +input 
+cfnzbackg(nispmx) real          /nispmx*1./ +input
+                                  #..zml impurity background floor rescale factor;
+                                  #effective floor density used everywhere nzbackg
+                                  #enters the niz_floor/nizm_floor formula becomes
+                                  #cfnzbackg*nzbackg -- default 1. reproduces the
+                                  #unmodified nzbackg floor exactly (no effect
+                                  #unless this new coefficient is explicitly set)
+facnzbackg2nis(nispmx) real /nispmx*1.e-8/ +input
                                   #fraction of nzbackg add to initial nis
 upclng(nispmx) real [m/s] /nispmx*1.e8/ +input 
                                   #max ion vel at beginning of iteration
@@ -1032,6 +1043,7 @@ yinc        integer         /2/
 isjaccorall integer         /1/ #if=1 uses all ix cells for iy=0 Jac
 ixm1(0:nx+1,0:ny+1)       _integer
 ixp1(0:nx+1,0:ny+1)       _integer
+ixnupf(0:nx+1,0:ny+1)     _integer  #eff ix dens mesh at up-face; jumps incl
 iym1a(0:nx+1,0:ny+1)      _integer  # for mdsplus use only
 iyp1a(0:nx+1,0:ny+1)      _integer
 stretcx(0:nx+1,0:ny+1)    _real      #array for stretching gas x-coord.
@@ -1549,6 +1561,7 @@ lni(0:nx+1,0:ny+1,1:nisp)  _real  [m^-3]  #log(ion dens) in prim. cell (ix,iy)
 nm(0:nx+1,0:ny+1,1:nisp)   _real [kg*m^-3]#mass density [nm(,,1) is sum, exclud.
                                           #gas, if nusp=1, isimpon=5] in cell
 nz2(0:nx+1,0:ny+1)         _real  [m^-3]  #sum of ni*zi**2 over all ion species
+niupyfacetest(0:nx+1,0:ny+1) _real [m^-3] #diagnose sten logic ni on up-yface
 uu(0:nx+1,0:ny+1,1:nisp)   _real  [m/s]   #ratio ion-flux/density at x-face;
                                           #if orthog mesh, poloidal ion velocity
 uup(0:nx+1,0:ny+1,1:nisp)  _real  [m/s]   #poloidal ion vel (|| flow contrib)
@@ -1893,7 +1906,7 @@ flngxy(0:nx+1,0:ny+1,1:ngsp) _real [1/s] #nonorthog gas pol.log-cur., east face
 fngyx(0:nx+1,0:ny+1,1:ngsp) _real [1/s] #nonorthog gas rad. cur., north face
 fnixtot(0:nx+1,0:ny+1)      _real [1/s] #total poloidal ion cur.
 fniytot(0:nx+1,0:ny+1)      _real [1/s] #total radial ion cur.
-
+flimfacxf(0:nx+1,0:ny+1)    _real       #isotropic gas flux-lim factor x-face
 ***** Indexes:
 #Indices that help the calculation
 idxn(0:nx+1,0:ny+1,1:nisp)	_integer  # index of yl vector for ni(ix,iy)
