@@ -277,12 +277,12 @@ c               vnt = ne*tau [sec/m**3].
       nycoef=nydata_api
       nzcoef=nzdata
 
-      emcoef(:,:,:) = emcoef_mul(:,:,:,izspff)
+      #emcoef(:,:,:) = emcoef_mul(:,:,:,izspff)
 
       icont = 0
       vlogw=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots_api, yknots_api, zknots,
      &             nxcoef, nycoef, nzcoef, kxords_api, kyords_api, kzords,
-     &             emcoef, ldf_api, mdf, icont, iworki, work2, iflagi)
+     &             emcoef_mul(:,:,:,izspff), ldf_api, mdf, icont, iworki, work2, iflagi)
       w=10**vlogw
       emissbs_mul=w
 

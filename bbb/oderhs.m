@@ -4688,7 +4688,7 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                nratio(ix,iy) = ng(ix,iy,1)/ne(ix,iy)
                pradold = pwrzec(ix,iy)
                if (isimpon .eq. 2) then   # fixed-fraction model
-		  pradc = 0.
+		  pradc(ix,iy) = 0.
 		  do igsp = 1, nzspff   #..zml
 		    afrac(ix,iy) = afrac_mul(ix,iy,igsp)
                     na(ix,iy) = afrac(ix,iy) * ne(ix,iy)
