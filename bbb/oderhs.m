@@ -2638,7 +2638,8 @@ c  If more neutral species have full parallel mom eqn, need to redo loops
                do 937 ix = i1,i6
 c
                   ix1 = ixm1(ix,iy)
-		  ixuf = ixm1(ix,iy)+1
+		  ixuf = ix
+               if (isvisxuf .eq. 1) ixuf = ixm1(ix,iy)+1  #..zml
                   vtn = sqrt(max(tg(ixuf,iy,1),tgmin*ev)/mi(ifld))
  		  qfl = flalfvgxa(ixuf)*nm(ixuf,iy,ifld)*vtn**2
                   if(isvisxn_old == 1) then
@@ -2728,7 +2729,8 @@ c
             tv = zi(jfld)**2 / sqrt((mi(ifld)+mi(jfld))/(2*mp))
             do 41 iy = j1, j6
                do 40 ix = i1, i6
-	          ixuf = ixm1(ix,iy)+1
+	          ixuf = ix
+               if (isvisxuf .eq. 1) ixuf = ixm1(ix,iy)+1  #..zml
                   w(ix,iy) = w(ix,iy) + tv*ni(ixuf,iy,jfld)
    40          continue
    41       continue
@@ -2737,11 +2739,16 @@ c
          do 44 iy = j1, j6
             iyp1 = min(iy+1,ny+1)
             do 43 ix = i1, i6
-               ixuf = ixm1(ix,iy)+1
+               ixuf = ix
+               if (isvisxuf .eq. 1) ixuf = ixm1(ix,iy)+1  #..zml
                ix2 = ixp1(ix,iy)
                ix3 = ixp1(ix,iyp1)
-	       ctaui(ix,iy,ifld) = 2.1e13*2./
+               if (isvisxuf .eq. 1) then  #..zml viscyave fork, kept for reproducibility
+	         ctaui(ix,iy,ifld) = 2.1e13*2./
      .          (loglambda(ixuf,iy)+loglambda(ix-1,iy)*zi(ifld)**2) # mass fac?
+               else                       # cell centre, as in upstream and conduction
+                 ctaui(ix,iy,ifld) = 2.1e13/(loglambda(ix,iy)*zi(ifld)**2)
+               endif
                tv2 = ctaui(ix,iy,ifld)/(ev*sqrt(ev))
                if (convis .eq. 0) then
                   a = max (ti(ixuf,iy), temin*ev)

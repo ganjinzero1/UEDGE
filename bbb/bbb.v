@@ -336,6 +336,11 @@ cfanomvisyg real    /0./    +input #Coef. for neut y-visc ~travis(2)
 cfvisxn   real      /1./    +input #Coef. for neutral x-visc. in up(,,iispg) eqn
 cfvisxy(1:nispmx) real /nispmx*1./    +input #Coef. mult fmixy(ifld)
 isvisxn_old integer /0/     +input #=1 uses sigcx,rrfac=1; =0 uses kelhihg, rrfac=rr**2
+isvisxuf    integer /1/     +input #..zml x-index for parallel ion/gas visx terms:
+                                    #=1 ixm1(ix,iy)+1 with face-averaged lnLambda in
+                                    #   ctaui (viscyave fork; jacfix-identical), which
+                                    #   swaps core and private-flux cells at x-point cuts
+                                    #=0 cell centre ix and lnLambda(ix) (upstream UEDGE)
 cfvxnrr   real      /1./    +input #=1 gives rr**2 in visx gas; =0 gives old 1 factor
 cfvisyn   real      /1./    +input #Coef. for neutral y-visc. in up(,,iispg) eqn
 cfvcsx(1:nispmx) real /nispmx*1./  +input #Coefs for x-visc. in ti-eq. with ismcnon>0
