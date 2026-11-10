@@ -2137,8 +2137,8 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
                          endif
                          kionz = kionz + sigvi_floor # only to set kionm below
                          kcxrzig = rcxighg(jg)*kcxrz  # K_cx of ng(jg)+ni(1)->
-                         niz_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
-     .                          (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
+                         niz_floor = cfnzbackg(ifld_fcs)*nzbackg(ifld_fcs) * (0.9 + 0.1*
+     .                          (cfnzbackg(ifld_fcs)*nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
                          pscx0 = ngvol*(ni(ix,iy,ifld_fcs)-niz_floor)*kcxrz - 
      .                           ng(ix,iy,jg)*ni(ix,iy,1)*vol(ix,iy)*
      .                                                        kcxrzig
@@ -2215,8 +2215,8 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
                         z1fac = 1.   # gets reset = 0 if ifld.eq.ifld_fcs+1
 
                         if (ifld .eq. ifld_fcs+1) then #for 2nd charge-state
-                           nizm_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
-     .                         (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
+                           nizm_floor = cfnzbackg(ifld_fcs)*nzbackg(ifld_fcs) * (0.9 + 0.1*
+     .                         (cfnzbackg(ifld_fcs)*nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
                            psor(ix,iy,ifld_fcs) = psor(ix,iy,ifld_fcs)-
      .                            nevol*(ni(ix,iy,ifld_fcs)-nizm_floor)*
      .                                                            kionm
@@ -2229,8 +2229,8 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
                            z1fac = 0.
                         endif
 
-                        niz_floor = nzbackg(ifld) * (0.9 + 0.1*
-     .                            (nzbackg(ifld)/ni(ix,iy,ifld))**inzb)
+                        niz_floor = cfnzbackg(ifld)*nzbackg(ifld) * (0.9 + 0.1*
+     .                            (cfnzbackg(ifld)*nzbackg(ifld)/ni(ix,iy,ifld))**inzb)
                         psor(ix,iy,ifld) = nevol *
      .                                     ( ni(ix,iy,ifld-1) * kionm -
      .                             (ni(ix,iy,ifld)-niz_floor) * kionz )
@@ -4756,8 +4756,8 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                        na_mul(ix,iy,igsp) = na(ix,iy)
                        pradcff_mul(ix,iy,igsp) = pradcff(ix,iy)
                        pradc(ix,iy) = pradc(ix,iy) + pradcff(ix,iy)
+                       pwrzec(ix,iy) = pwrzec(ix,iy) + pradcff(ix,iy)
 		     enddo
-                     pwrzec(ix,iy) = pwrzec(ix,iy) + pradcff(ix,iy)
                   endif
 
                endif
