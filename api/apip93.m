@@ -433,6 +433,84 @@ c               vnt = ne*tau [sec/m**3].
 
 c----------------------------------------------------------------------c
 
+      real function z1avgbs_mul (vte,vnr,vnt,izspff)    #..zml
+      implicit none
+      real vnt,vnr,vte
+      integer izspff
+Use(Imslwrk)   # nxdata_api,nydata_api,nzdata,xdata_api,ydata_api,zdata,
+               # kxords_api,kyords_api,kzords,xknots_api,yknots_api,zknots
+Use(Multi_fix_frc) # z1coef_mul
+
+      integer nxcoef,nycoef,nzcoef
+      real vz,xuse,yuse,zuse
+
+      real B3VAL
+      external B3VAL
+
+c     Average charge <Z> of fixed-fraction species izspff versus
+c               vte = e-temperature [J]
+c               vnr = ng/ne density ratio
+c               vnt = ne*tau [sec/m**3]
+c     (same table and arguments as emissbs_mul).
+
+      xuse=min(max(xdata_api(1),log10(vte)),xdata_api(nxdata_api))
+      yuse=min(max(ydata_api(1),log10(vnr)),ydata_api(nydata_api))
+      zuse=min(max(zdata(1),log10(vnt)),zdata(nzdata))
+
+      nxcoef=nxdata_api
+      nycoef=nydata_api
+      nzcoef=nzdata
+
+      icont = 0
+      vz=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots_api, yknots_api, zknots,
+     &             nxcoef, nycoef, nzcoef, kxords_api, kyords_api, kzords,
+     &             z1coef_mul(:,:,:,izspff), ldf_api, mdf, icont, iworki, work2, iflagi)
+      z1avgbs_mul=vz
+
+      return
+      end
+
+c----------------------------------------------------------------------c
+
+      real function z2avgbs_mul (vte,vnr,vnt,izspff)    #..zml
+      implicit none
+      real vnt,vnr,vte
+      integer izspff
+Use(Imslwrk)   # nxdata_api,nydata_api,nzdata,xdata_api,ydata_api,zdata,
+               # kxords_api,kyords_api,kzords,xknots_api,yknots_api,zknots
+Use(Multi_fix_frc) # z2coef_mul
+
+      integer nxcoef,nycoef,nzcoef
+      real vz,xuse,yuse,zuse
+
+      real B3VAL
+      external B3VAL
+
+c     Average <Z**2> of fixed-fraction species izspff versus
+c               vte = e-temperature [J]
+c               vnr = ng/ne density ratio
+c               vnt = ne*tau [sec/m**3]
+c     (same table and arguments as emissbs_mul).
+
+      xuse=min(max(xdata_api(1),log10(vte)),xdata_api(nxdata_api))
+      yuse=min(max(ydata_api(1),log10(vnr)),ydata_api(nydata_api))
+      zuse=min(max(zdata(1),log10(vnt)),zdata(nzdata))
+
+      nxcoef=nxdata_api
+      nycoef=nydata_api
+      nzcoef=nzdata
+
+      icont = 0
+      vz=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots_api, yknots_api, zknots,
+     &             nxcoef, nycoef, nzcoef, kxords_api, kyords_api, kzords,
+     &             z2coef_mul(:,:,:,izspff), ldf_api, mdf, icont, iworki, work2, iflagi)
+      z2avgbs_mul=vz
+
+      return
+      end
+
+c----------------------------------------------------------------------c
+
       real function z1avgbs (vte,vnr,vnt)
       implicit none
       real vnt,vnr,vte

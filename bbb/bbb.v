@@ -3786,6 +3786,18 @@ afrac(0:nx+1,0:ny+1)	_real	/.00/ +maybeinput
                                # atomic impur conc; set internally to afracs
 afrac_mul(0:nx+1,0:ny+1,1:nzspff)    _real   /.00/ +maybeinput
                                #..zml atomic impur conc; set internally to afracs
+isffne      integer /0/   +input  #..zml =1 adds electrons of fixed-fraction impurities
+                                  #(isimpon=2,7), with afrac = n_imp/ne (all states):
+                                  #  ne = n_hyd/(1 - sum_s afrac_s*<Z>_s)
+                                  #  zeff += sum_s afrac_s*<Z**2>_s ; requires isflxvar=0
+nitffne     integer /3/   +input  #..zml fixed-point passes per cell for ne <-> <Z>(ne)
+ffnefmax    real    /0.9/ +input  #..zml cap on sum_s afrac_s*<Z>_s, the fraction of
+                                  #electrons from fixed-fraction impurities
+afsumld     real    /-1./          #..zml sum of species-1 afrac at the last load;
+                                   #detects a changed afracs (nzspff=1)
+neff(0:nx+1,0:ny+1)  _real [/m**3]  #..zml electrons from fixed-fraction impurities
+zbarff(0:nx+1,0:ny+1,1:nzspff)  _real  #..zml <Z> of each fixed-fraction species
+z2barff(0:nx+1,0:ny+1,1:nzspff) _real  #..zml <Z**2> of each fixed-fraction species
 atau(0:nx+1,0:ny+1)	_real	/1./	[sec] +input
                                # lifetime of impurity
 tau1(0:nx+1,0:ny+1)	_real	# time to escape to inboard divertor plate

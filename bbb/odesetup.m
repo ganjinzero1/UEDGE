@@ -732,6 +732,7 @@ c-----------------------------------------------------------------------
       #Former Aux module variables
       integer ix,iy,igsp
       integer ifrcsrc  #..zml
+      logical lafs, lafm  #..zml
       real tv
 
 *=======================================================================
@@ -1031,6 +1032,12 @@ c ... Initialize Multicharge rate table dimensions
 c ... Set up tables for hydrogenic atomic-physics processes.
       if (newaph == 1) call aphread
 c ... Set up tables for impurity atomic-physics processes.
+      if (isffne .eq. 1) then   #..zml fixed-fraction electrons
+         if (isflxvar .ne. 0) call xerrab('*** isffne=1 requires '//
+     .      'isflxvar=0: Te packing in convert does not include them')
+         if (isimpon.ne.2 .and. isimpon.ne.7) call remark(
+     .      '*** isffne=1 has no effect unless isimpon = 2 or 7')
+      endif
       if (isimpon .eq. 1) then		# obsolete option
          call xerrab ('ueinit -- option isimpon=1 is obsolete; use 2')
       elseif (isimpon .eq. 2) then	# data supplied by D. Post 1993
@@ -1520,21 +1527,29 @@ c.... If the grid does not change, but restart from saved variables
                 if (phis(nxold-1,nyold-1) .eq. 0) phi(ix,iy) = 40.  #avoid phi=0.
              enddo
           enddo
-c..zml    Set each fixed-fraction species' afrac once, outside the cell loop:
-c..zml    deciding inside the loop reads afracs_mul(1,1) after the loop has
-c..zml    already overwritten it.  Species 1 falls back to single-species afracs.
+c..zml    Set each fixed-fraction species' afrac once, outside the cell loop
+c..zml    (deciding inside it reads values the loop has already overwritten).
+c..zml    Species 1 with nzspff=1: afracs wins if it was changed since the last
+c..zml    load (afsumld; gridseq copies afrac back into afracs, so an unchanged
+c..zml    afracs is not seen as a change), else afracs_mul. With nzspff>1,
+c..zml    afracs_mul controls every species; afracs is used for species 1 only
+c..zml    if afracs_mul was never set, since gridseq leaves the last species in it.
           if (isimpon .eq. 2 .or. isimpon .eq. 7) then
+             lafs = afracs(1,1)+afracs(nx,ny) .gt. 1.e-20
              do igsp = 1, nzspff
                 ifrcsrc = 0
-                if (afracs_mul(1,1,igsp)+afracs_mul(nx,ny,igsp) .gt. 1.e-20) then
+                lafm = afracs_mul(1,1,igsp)+afracs_mul(nx,ny,igsp) .gt. 1.e-20
+                if (igsp.eq.1 .and. nzspff.eq.1 .and. lafs .and. (.not.lafm
+     .              .or. sum(afracs(1:nx,1:ny)).ne.afsumld)) then
+                   ifrcsrc = 2
+                elseif (lafm) then
                    ifrcsrc = 1
 c..zml             zeros next to set cells: afracs_mul was set before the grid
 c..zml             (or nzspff) was allocated and gchange kept only a corner
                    if (count(afracs_mul(0:nx+1,0:ny+1,igsp) .le. 0.) .gt. 0)
      .               call remark('***WARNING: afracs_mul is 0 in some cells; '//
      .               'set it after nx, ny and nzspff are allocated')
-                elseif (igsp .eq. 1 .and.
-     .                  afracs(1,1)+afracs(nx,ny) .gt. 1.e-20) then
+                elseif (igsp .eq. 1 .and. lafs) then
                    ifrcsrc = 2
                 else
                    call remark('***WARNING: afracs_mul not set for a '//
@@ -1548,6 +1563,7 @@ c..zml             (or nzspff) was allocated and gchange kept only a corner
                    enddo
                 enddo
              enddo
+             if (nzspff .eq. 1) afsumld = sum(afrac_mul(1:nx,1:ny,1))
           endif
 
        endif
@@ -1657,15 +1673,27 @@ c...  Now interpolate the plasma variables
 c...  Interpolate the relative fraction of impurities
 #         if (isimpon>0 .and. afracs(1,1)+afracs(nxold,nyold)>1.e-20)
 #     .                        call intpvar (afracs,afrac,0,nxold,nyold)
-         do igsp = 1, nzspff
-	   if (isimpon>0 .and. afracs_mul(1,1,igsp)+afracs_mul(nxold,nyold,igsp)>1.e-20) then
-              call intpvar (afracs_mul(0:,0:,igsp),afrac_mul(0:,0:,igsp),0,nxold,nyold)
-           elseif (isimpon>0 .and. igsp==1 .and.
-     .             afracs(1,1)+afracs(nxold,nyold)>1.e-20) then
-c..zml        single-species input afracs still sets species 1
-              call intpvar (afracs,afrac_mul(0:,0:,1),0,nxold,nyold)
-           endif
-         enddo
+c..zml  Same source rule as the restart branch above: with nzspff=1 a changed
+c..zml  afracs wins (afsumld), otherwise afracs_mul; afracs fills species 1
+c..zml  only if afracs_mul was never set.
+         if (isimpon .gt. 0) then
+           lafs = afracs(1,1)+afracs(nxold,nyold) .gt. 1.e-20
+           do igsp = 1, nzspff
+             lafm = afracs_mul(1,1,igsp)+afracs_mul(nxold,nyold,igsp)
+     .                                                      .gt. 1.e-20
+             if ((igsp.eq.1 .and. nzspff.eq.1 .and. lafs .and. (.not.lafm
+     .            .or. sum(afracs(1:nxold,1:nyold)).ne.afsumld)) .or.
+     .           (igsp.eq.1 .and. lafs .and. .not.lafm)) then
+                afracs_mul(:,:,1) = afracs(:,:)
+                call intpvar (afracs_mul(0:,0:,1),afrac_mul(0:,0:,1),
+     .                                                 0,nxold,nyold)
+             elseif (lafm) then
+                call intpvar (afracs_mul(0:,0:,igsp),afrac_mul(0:,0:,igsp),
+     .                                                 0,nxold,nyold)
+             endif
+           enddo
+           if (nzspff .eq. 1) afsumld = sum(afrac_mul(1:nx,1:ny,1))
+         endif
 
 c...  If phis(nx-1,ny-1)=0., reset to constant 40 volts
          if (phis(nxold-1,nyold-1).eq.0.)

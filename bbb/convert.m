@@ -177,6 +177,10 @@ c ... The other variables are added in the routine convr_auxo
       #Former Aux module variables
       integer ix,iy,igsp,ix1,ix2
       real t1,t2
+      real nehyd, nek, fz, vnr   #..zml fixed-fraction electrons
+      integer itff, jz
+      real z1avgbs_mul, z2avgbs_mul
+      external z1avgbs_mul, z2avgbs_mul
 
 c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
       Use(Dim)                 # nx,ny,nhsp,nzsp,nisp,nusp,ngsp
@@ -304,6 +308,31 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                  tg(ix,iy,igsp) = max(tg(ix,iy,igsp), tgmin*ev) 
                endif
  65         continue
+c..zml  Electrons of fixed-fraction impurities (afrac = n_imp/ne, all states):
+c..zml  ne = n_hyd/(1 - sum_s afrac_s*<Z>_s), with <Z> evaluated at the updated
+c..zml  ne through ng/ne and ne*tau; a fixed number of passes keeps the result
+c..zml  a smooth function of the state for the finite-difference Jacobian.
+            if (isffne.eq.1 .and. (isimpon.eq.2 .or. isimpon.eq.7)) then
+               nehyd = ne(ix,iy)
+               nek = nehyd
+               do itff = 1, nitffne
+                  fz = 0.
+                  vnr = max(ng(ix,iy,1), 0.)/nek + 1.e-30
+                  do jz = 1, nzspff
+                     zbarff(ix,iy,jz) = max(0., z1avgbs_mul(te(ix,iy),
+     .                                  vnr, atau(ix,iy)*nek, jz))
+                     fz = fz + afrac_mul(ix,iy,jz)*zbarff(ix,iy,jz)
+                  enddo
+                  nek = nehyd/(1. - min(fz, ffnefmax))
+               enddo
+               vnr = max(ng(ix,iy,1), 0.)/nek + 1.e-30
+               do jz = 1, nzspff
+                  z2barff(ix,iy,jz) = max(0., z2avgbs_mul(te(ix,iy),
+     .                                vnr, atau(ix,iy)*nek, jz))
+               enddo
+               ne(ix,iy) = nek
+               neff(ix,iy) = nek - nehyd
+            endif
             ntemp = nit(ix,iy) + cngtgx(1)*ng(ix,iy,1)
             if(isflxvar .eq. 0) ntemp = nnorm
 	    if(istionxy(ix,iy) .eq. 1) then
@@ -390,6 +419,7 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
       integer ifld, id
       integer impflag, inegt, inegng
       integer jx,ixlp1,ixlp2,ixrm1
+      integer jz   #..zml
       #Former Aux module variables
       integer ix,iy,igsp,ix1,ix2
       real t1,t2
@@ -545,6 +575,12 @@ ccc         enddo
         do 15 ix = is, ie
 	    pre(ix,iy) = ne(ix,iy) * te(ix,iy)
             pr(ix,iy) = pr(ix,iy) + pre(ix,iy)
+            if (isffne.eq.1 .and. (isimpon.eq.2 .or. isimpon.eq.7)) then
+               do jz = 1, nzspff   #..zml fixed-fraction impurities in zeff
+                  zeff(ix,iy) = zeff(ix,iy) +
+     .                    afrac_mul(ix,iy,jz)*ne(ix,iy)*z2barff(ix,iy,jz)
+               enddo
+            endif
             zeff(ix,iy) = zeff(ix,iy) / ne(ix,iy)
             znot(ix,iy) = ne(ix,iy)*zeff(ix,iy)/ni(ix,iy,1) - 1
             do igsp = 1, ngsp
